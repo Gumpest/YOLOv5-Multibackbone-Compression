@@ -1,0 +1,4 @@
+# nohup python -m torch.distributed.launch --nproc_per_node 2 --master_port 2000 train.py --data VisDrone.yaml --weights yolov5s.pt --cfg models/yolov5s.yaml --epochs 300 --batch-size 8 --img 608 --nosave --device 2,3 --sync-bn >> yolov5s.out &
+# nohup python -m torch.distributed.launch --nproc_per_node 2 --master_port 2001 train.py --data VisDrone.yaml --weights yolov5l.pt --cfg models/yolov5l.yaml --epochs 300 --batch-size 8 --img 608 --nosave --device 0,3 --sync-bn >> yolov5l.out &
+# nohup python -m torch.distributed.launch --nproc_per_node 2 --master_port 2002 train.py --data VisDrone.yaml --weights yolov5x.pt --cfg models/yolov5x.yaml --epochs 300 --batch-size 8 --img 608 --nosave --device 0,3 --sync-bn >> yolov5x.out &
+python -m torch.distributed.launch --nproc_per_node 1 --master_port 2002 train.py --data VisDrone.yaml --weights yolov5x.pt --cfg models/yolov5x5.yaml --epochs 300 --batch-size 2 --img 608 --nosave --device 3 --sync-bn
