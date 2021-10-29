@@ -131,7 +131,6 @@ class TransformerBlock(nn.Module):
         p = x.flatten(2).unsqueeze(0).transpose(0, 3).squeeze(3)
         return self.tr(p + self.linear(p)).unsqueeze(3).transpose(0, 3).reshape(b, self.c2, w, h)
 
-
 class Bottleneck(nn.Module):
     # Standard bottleneck
     def __init__(self, c1, c2, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, shortcut, groups, expansion
@@ -216,6 +215,7 @@ class SPP(nn.Module):
         x = self.cv1(x)
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')  # suppress torch 1.9.0 max_pool2d() warning
+            # print(self.cv2(torch.cat([x] + [m(x) for m in self.m], 1)).shape)
             return self.cv2(torch.cat([x] + [m(x) for m in self.m], 1))
 
 

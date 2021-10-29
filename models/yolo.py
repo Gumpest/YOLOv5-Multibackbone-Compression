@@ -121,6 +121,7 @@ class Model(nn.Module):
         LOGGER.info('')
 
     def forward(self, x, augment=False, profile=False, visualize=False):
+        # print(augment) False
         if augment:
             return self._forward_augment(x)  # augmented inference, None
         return self._forward_once(x, profile, visualize)  # single-scale inference, train
@@ -142,6 +143,7 @@ class Model(nn.Module):
     def _forward_once(self, x, profile=False, visualize=False):
         y, dt = [], []  # outputs
         for m in self.model:
+            # print(m)
             if m.f != -1:  # if not from previous layer
                 x = y[m.f] if isinstance(m.f, int) else [x if j == -1 else y[j] for j in m.f]  # from earlier layers
             if profile:
