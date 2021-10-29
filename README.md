@@ -51,7 +51,7 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 
 结构图如下：
 
-![TPH-YOLOv5](./TPH-YOLOv5.png)
+![TPH-YOLOv5](https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/TPH-YOLOv5.png)
 
 注意：
 
