@@ -70,7 +70,7 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 | Model            | mAP  | mAP@50 | Parameters(M) | GFLOPs | FPS@CPU |
 | ---------------- | ---- | ------ | ------------- | ------ | ------- |
 | YOLOv5s          | 18.4 | 34     | 7.05          | 15.9   |         |
-| YOLOv5l-Ghostnet |      |        | 24.27         | 42.4   |         |
+| YOLOv5l-Ghostnet | 18.4 | 33.8   | 24.27         | 42.4   |         |
 
 #### Ghostnet-YOLOv5
 
