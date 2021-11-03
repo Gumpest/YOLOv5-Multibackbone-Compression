@@ -49,7 +49,7 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 | YOLOv5x         | 24.3  | 40.8   | 86.28         | 204.4  |         |
 | YOLOv5xP2       | 30.1  | 49.3   | 90.96         | 314.2  |         |
 | YOLOv5xP2 CBAM  | 30.13 | 49.40  | 91.31         | 315.1  |         |
-| **YOLOv5x-TPH** |       |        | 86.08         | 238.9  |         |
+| **YOLOv5x-TPH** | 25.17 | 42.83  | 86.08         | 238.9  |         |
 
 组件：P2检测头、CBAM、Transformer Block
 
@@ -67,10 +67,11 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 
 ### 轻量区
 
-| Model            | mAP  | mAP@50 | Parameters(M) | GFLOPs | FPS@CPU |
-| ---------------- | ---- | ------ | ------------- | ------ | ------- |
-| YOLOv5s          | 18.4 | 34     | 7.05          | 15.9   |         |
-| YOLOv5l-Ghostnet | 18.4 | 33.8   | 24.27         | 42.4   |         |
+| Model              | mAP   | mAP@50 | Parameters(M) | GFLOPs | FPS@CPU | TrainCost@h |
+| ------------------ | ----- | ------ | ------------- | ------ | ------- | ----------- |
+| YOLOv5s            | 18.4  | 34     | 7.05          | 15.9   |         |             |
+| YOLOv5l-Ghostnet   | 18.4  | 33.8   | 24.27         | 42.4   |         | 27.44       |
+| YOLOv5l-Shufflenet | 16.48 | 31.1   | 21.27         | 40.5   |         | 10.98       |
 
 #### Ghostnet-YOLOv5
 
@@ -78,12 +79,18 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 
 （2）neck部分与head部分仍采用YOLOv5l原结构
 
+#### Shufflenet-YOLOv5
+
+（1）Focus Layer不利于芯片部署，频繁的slice操作会让缓存占用严重
+
+（2）避免多次使用C3 Leyer以及高通道的C3 Layer（违背G1与G3准则）
+
 
 
 ## To do
 
 - [ ] Multibackbone: mobilenetv3
-- [ ] Multibackbone: shufflenetv2
+- [x] Multibackbone: Shufflenetv2
 - [x] Multibackbone: Ghostnet
 - [x] Multibackbone: TPH-YOLOv5
 - [ ] Pruning: Network slimming

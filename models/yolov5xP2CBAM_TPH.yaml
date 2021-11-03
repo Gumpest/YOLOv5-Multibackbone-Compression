@@ -22,7 +22,7 @@ backbone:
    [-1, 9, C3, [512]],
    [-1, 1, Conv, [1024, 3, 2]],  # 7-P5/32
    [-1, 1, SPP, [1024, [5, 9, 13]]],
-   [-1, 3, C3TR, [1024]],  # 9
+   [-1, 3, C3TR, [1024, False]],  # 9
   ]
 
 # note: Encoder contains  [-1, numlayers, C3TR (c1), [c2]] heads default is 4
