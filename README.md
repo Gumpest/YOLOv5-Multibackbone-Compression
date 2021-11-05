@@ -8,6 +8,10 @@
 
 2021.10.31 完成替换backbone为Ghostnet
 
+2021.11.02 完成替换backbone为Shufflenetv2
+
+2021.11.05 完成替换backbone为Mobilenetv3Small
+
 ## Requirements
 
 环境安装
@@ -49,7 +53,7 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 | YOLOv5x         | 24.3  | 40.8   | 86.28         | 204.4  |         |
 | YOLOv5xP2       | 30.1  | 49.3   | 90.96         | 314.2  |         |
 | YOLOv5xP2 CBAM  | 30.13 | 49.40  | 91.31         | 315.1  |         |
-| **YOLOv5x-TPH** | 25.17 | 42.83  | 86.08         | 238.9  |         |
+| **YOLOv5x-TPH** |       |        | 96.76         | 345.0  |         |
 
 组件：P2检测头、CBAM、Transformer Block
 
@@ -59,19 +63,20 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 
 注意：
 
-（1）避免TransBlock导致显存爆炸，MultiAttentionHead中将注意力头的数量减少至4，并且FFN中的两个全连接层从linear(c1, 4*c1)改为linear(c1, c1)，去掉GELU函数
+1、避免TransBlock导致显存爆炸，MultiAttentionHead中将注意力头的数量减少至4，并且FFN中的两个全连接层从linear(c1, 4*c1)改为linear(c1, c1)，去掉GELU函数
 
-（2）TransBlock的数量会根据YOLO规模的不同而同步改变
+2、TransBlock的数量会根据YOLO规模的不同而改变，根据论文作者的邮件，标准结构作用于YOLOv5m
 
-（3）TPH-YOLOv5显卡需求较高，若根据结构图进行复现，RTX3090下只能支持batch size=1，img_size=508，可根据个人需求适当减小TransBlock的数量
+3、TPH-YOLOv5显卡需求较高，因此当YOLOv5x为主体时：（1）首先去掉14和19的CBAM模块（2）降低与P2关联的通道数（128）（3）在输出头之前会添加SPP模块，注意SPP的kernel随着P的像素减小而减小（4）在CBAM之后进行输出（5）只保留backbone以及最后一层输出的TransBlock
 
 ### 轻量区
 
-| Model              | mAP   | mAP@50 | Parameters(M) | GFLOPs | FPS@CPU | TrainCost@h |
-| ------------------ | ----- | ------ | ------------- | ------ | ------- | ----------- |
-| YOLOv5s            | 18.4  | 34     | 7.05          | 15.9   |         |             |
-| YOLOv5l-Ghostnet   | 18.4  | 33.8   | 24.27         | 42.4   |         | 27.44       |
-| YOLOv5l-Shufflenet | 16.48 | 31.1   | 21.27         | 40.5   |         | 10.98       |
+| Model                    | mAP   | mAP@50 | Parameters(M) | GFLOPs | FPS@CPU | TrainCost@h | Memory Cost(G) |
+| ------------------------ | ----- | ------ | ------------- | ------ | ------- | ----------- | -------------- |
+| YOLOv5s                  | 18.4  | 34     | 7.05          | 15.9   |         |             |                |
+| YOLOv5l-Ghostnet         | 18.4  | 33.8   | 24.27         | 42.4   |         | 27.44       | 4.97           |
+| YOLOv5l-Shufflenet       | 16.48 | 31.1   | 21.27         | 40.5   |         | 10.98       | 2.41           |
+| YOLOv5l-Mobilenetv3Small |       |        | 20.38         | 38.4   |         |             | 5.3            |
 
 #### Ghostnet-YOLOv5
 
@@ -89,9 +94,10 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 
 ## To do
 
-- [ ] Multibackbone: mobilenetv3
+- [x] Multibackbone: Mobilenetv3-small
 - [x] Multibackbone: Shufflenetv2
 - [x] Multibackbone: Ghostnet
+- [ ] Multibackbone: EfficientNet-Lite
 - [x] Multibackbone: TPH-YOLOv5
 - [ ] Pruning: Network slimming
 - [ ] Quantization: 4bit QAT
