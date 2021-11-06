@@ -65,24 +65,24 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 
 1、避免TransBlock导致显存爆炸，MultiAttentionHead中将注意力头的数量减少至4，并且FFN中的两个全连接层从linear(c1, 4*c1)改为linear(c1, c1)，去掉GELU函数
 
-2、TransBlock的数量会根据YOLO规模的不同而改变，根据论文作者的邮件，标准结构作用于YOLOv5m
+2、TransBlock的数量会根据YOLO规模的不同而改变，标准结构作用于YOLOv5m
 
-3、TPH-YOLOv5显卡需求较高，因此当YOLOv5x为主体时：（1）首先去掉14和19的CBAM模块（2）降低与P2关联的通道数（128）（3）在输出头之前会添加SPP模块，注意SPP的kernel随着P的像素减小而减小（4）在CBAM之后进行输出（5）只保留backbone以及最后一层输出的TransBlock
+3、当YOLOv5x为主体与标准结构的区别是：（1）首先去掉14和19的CBAM模块（2）降低与P2关联的通道数（128）（3）在输出头之前会添加SPP模块，注意SPP的kernel随着P的像素减小而减小（4）在CBAM之后进行输出（5）只保留backbone以及最后一层输出的TransBlock（6）采用BiFPN作为neck
 
 ### 轻量区
 
-| Model                    | mAP   | mAP@50 | Parameters(M) | GFLOPs | FPS@CPU | TrainCost@h | Memory Cost(G) |
-| ------------------------ | ----- | ------ | ------------- | ------ | ------- | ----------- | -------------- |
-| YOLOv5s                  | 18.4  | 34     | 7.05          | 15.9   |         |             |                |
-| YOLOv5l-Ghostnet         | 18.4  | 33.8   | 24.27         | 42.4   |         | 27.44       | 4.97           |
-| YOLOv5l-Shufflenet       | 16.48 | 31.1   | 21.27         | 40.5   |         | 10.98       | 2.41           |
-| YOLOv5l-Mobilenetv3Small |       |        | 20.38         | 38.4   |         |             | 5.3            |
+| Model                    | mAP   | mAP@50 | Parameters(M) | GFLOPs | FPS@CPU | TrainCost(h) | Memory Cost(G) |
+| ------------------------ | ----- | ------ | ------------- | ------ | ------- | ------------ | -------------- |
+| YOLOv5s                  | 18.4  | 34     | 7.05          | 15.9   |         |              |                |
+| YOLOv5l-Ghostnet         | 18.4  | 33.8   | 24.27         | 42.4   |         | 27.44        | 4.97           |
+| YOLOv5l-Shufflenet       | 16.48 | 31.1   | 21.27         | 40.5   |         | 10.98        | 2.41           |
+| YOLOv5l-Mobilenetv3Small | 16.55 | 31.2   | 20.38         | 38.4   |         | 10.19        | 5.3            |
 
 #### Ghostnet-YOLOv5
 
 （1）为保持一致性，下采样的DW的kernel_size均等于3
 
-（2）neck部分与head部分仍采用YOLOv5l原结构
+（2）neck部分与head部分沿用YOLOv5l原结构
 
 #### Shufflenet-YOLOv5
 
@@ -90,7 +90,11 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 
 （2）避免多次使用C3 Leyer以及高通道的C3 Layer（违背G1与G3准则）
 
+#### Mobilenetv3Small-YOLOv5
 
+（1）尊重原文结构，精确使用hard-Swish以及SE层
+
+（2）neck部分与head部分沿用YOLOv5l原结构
 
 ## To do
 
