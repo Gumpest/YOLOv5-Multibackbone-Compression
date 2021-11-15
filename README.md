@@ -60,7 +60,7 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 
 结构图如下：
 
-![TPH-YOLOv5](https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/TPH-YOLOv5.png)
+![TPH-YOLOv5](https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/img/TPH-YOLOv5.png)
 
 注意：
 
@@ -80,7 +80,7 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 | 0.05 | 0.3  | 0.7  | 38.00 |
 | 0.05 | 0.2  | 0.4  |       |
 
-![image-20211109150606998](C:\Users\ZhangYuan\AppData\Roaming\Typora\typora-user-images\image-20211109150606998.png)
+![Loss](https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/img/image-20211109150606998.png)
 
 ### 轻量区
 
