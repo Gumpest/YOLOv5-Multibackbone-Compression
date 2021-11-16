@@ -137,9 +137,9 @@ python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yolov5n.y
 ```
 ## Pruning
 
-鉴于YOLOv5的块状结构设计，这里采用了基于搜索的通道剪枝方法*[EagleEye: Fast Sub-net Evaluation for Efficient Neural Network Pruning](https://arxiv.org/abs/2007.02491)*。核心思想是随机搜索到大量符合目标约束的子网，然后快速更新校准BN层的均值与方差参数，并在验证集上测试校准后全部子网的精度。精度最高的子网拥有最好的架构，经微调恢复后能达到较高的精度。
+鉴于YOLOv5的块状结构设计，这里采用了基于搜索的通道剪枝方法[EagleEye: Fast Sub-net Evaluation for Efficient Neural Network Pruning](https://arxiv.org/abs/2007.02491)。核心思想是随机搜索到大量符合目标约束的子网，然后快速更新校准BN层的均值与方差参数，并在验证集上测试校准后全部子网的精度。精度最高的子网拥有最好的架构，经微调恢复后能达到较高的精度。
 
-![](img/eagleeye.png)
+![](https://github.com/Cydia2018/YOLOv5-Multibackbone-Compression/blob/main/img/eagleeye.png)
 
 这里为Conv、C3、SPP和SPPF模块设计了通道缩放比例用于搜索。具体来说有以下缩放系数：
 
