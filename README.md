@@ -109,6 +109,24 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 
 （2）neck部分与head部分沿用YOLOv5l原结构
 
+## MQBench Quantize Aware Training
+ MQBench是在实际硬件部署下评估量化算法的基准和框架。可以使用MQBench进行各种适合于硬件部署的量化训练。
+### Prerequisites
+- PyTorch == 1.8.1
+### Install MQBench Lib
+由于MQBench目前还在不断更新，选择0.0.2稳定版本作为本仓库的量化库。
+```
+git clone https://github.com/ZLkanyo009/MQBench.git
+cd MQBench
+python setup.py build
+python setup.py install
+```
+### How to run QAT
+训练脚本实例：
+
+```shell
+python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yolov5n.yaml --epochs 300 --batch-size 8 --img 608 --nosave --device 0,1 --sync-bn -- quantize --BackendType NNIE
+```
 ## To do
 
 - [x] Multibackbone: Mobilenetv3-small

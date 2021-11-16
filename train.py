@@ -280,7 +280,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     if opt.quantize:        
         # quantize
         model.train()
-        model = prepare_qat_fx_by_platform(model, BackendType.Tensorrt)
+        model = prepare_qat_fx_by_platform(model, choose_backend(opt))
         model.eval()
         enable_calibration(model)
         calibration_flag = True
@@ -499,7 +499,7 @@ def parse_opt(known=False):
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
 
     parser.add_argument('--quantize', action='store_true', help='run QAT with yolo')
-    parser.add_argument('--BackendType', type=str, default='Academic', help='backend for QAT deployment')
+    parser.add_argument('--BackendType', type=str, default='Tensorrt', help='backend for QAT deployment')
     
     # Weights & Biases arguments
     parser.add_argument('--entity', default=None, help='W&B: Entity')
