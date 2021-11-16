@@ -135,6 +135,40 @@ python setup.py install
 ```shell
 python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yolov5n.yaml --epochs 300 --batch-size 8 --img 608 --nosave --device 0,1 --sync-bn --quantize --BackendType NNIE
 ```
+## Pruning
+
+鉴于YOLOv5的块状结构设计，这里采用了基于搜索的通道剪枝方法[EagleEye: Fast Sub-net Evaluation for Efficient Neural Network Pruning](https://arxiv.org/abs/2007.02491)。核心思想是随机搜索到大量符合目标约束的子网，然后快速更新校准BN层的均值与方差参数，并在验证集上测试校准后全部子网的精度。精度最高的子网拥有最好的架构，经微调恢复后能达到较高的精度。
+
+![](https://github.com/Cydia2018/YOLOv5-Multibackbone-Compression/blob/main/img/eagleeye.png)
+
+这里为Conv、C3、SPP和SPPF模块设计了通道缩放比例用于搜索。具体来说有以下缩放系数：
+
+- Conv模块的输出通道数
+- C3模块中cv2块和cv3块的输出通道数
+- C3模块中若干个bottleneck中的cv1块的输出通道数
+
+### Usage
+
+1. 正常训练模型
+
+```shell
+python train.py --data data/VisDrone.yaml --imgsz 640 --weights yolov5s.pt --cfg models/yolov5s-visdrone.yaml --device 0
+```
+
+（注意训练其他版本的模型，参考models/yolov5s-visdrone.yaml进行修改。目前只支持原版v5架构）
+
+2. 搜索最优子网
+
+```shell
+python prune_eagleeye.py --weights path_to_trained_yolov5_model --cfg models/yolov5s-visdrone.yaml --data data/VisDrone.yaml --path path_to_pruned_yolov5_yaml --max_iter maximum number of arch search --remain_ratio the whole FLOPs remain ratio
+```
+
+3. 微调恢复精度
+
+```shell
+python train.py --data data/VisDrone.yaml --imgsz 640 --weights path_to_pruned_yolov5_model --cfg path_to_pruned_yolov5_yaml --device 0
+```
+
 ## To do
 
 - [x] Multibackbone: MobilenetV3-small
