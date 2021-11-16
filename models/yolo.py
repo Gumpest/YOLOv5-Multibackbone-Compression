@@ -82,7 +82,7 @@ class Detect(nn.Module):
 
 
 class Model(nn.Module):
-    def __init__(self, cfg='yolov5s.yaml', ch=3, nc=None, anchors=None):  # model, input channels, number of classes
+    def __init__(self, cfg='yolov5s.yaml', ch=3, nc=None, anchors=None, pruning=False):  # model, input channels, number of classes
         super().__init__()
         if isinstance(cfg, dict):
             self.yaml = cfg  # model dict
@@ -100,7 +100,7 @@ class Model(nn.Module):
         if anchors:
             LOGGER.info(f'Overriding model.yaml anchors with anchors={anchors}')
             self.yaml['anchors'] = round(anchors)  # override yaml value
-        self.model, self.save = parse_model(deepcopy(self.yaml), ch=[ch])  # model, savelist
+        self.model, self.save = parse_model(deepcopy(self.yaml), ch=[ch], pruning=pruning)  # model, savelist
         self.names = [str(i) for i in range(self.yaml['nc'])]  # default names
         self.inplace = self.yaml.get('inplace', True)
 
@@ -118,7 +118,8 @@ class Model(nn.Module):
         # Init weights, biases
         initialize_weights(self)
         self.info()
-        LOGGER.info('')
+        if not pruning:
+            LOGGER.info('')
 
     def forward(self, x, augment=False, profile=False, visualize=False):
         # print(augment) False
@@ -234,7 +235,8 @@ class Model(nn.Module):
         return m
 
     def info(self, verbose=False, img_size=640):  # print model information
-        model_info(self, verbose, img_size)
+        GFLOPS = model_info(self, verbose, img_size)
+        self.flops = GFLOPS
 
     def _apply(self, fn):
         # Apply to(), cpu(), cuda(), half() to model tensors that are not parameters or registered buffers
@@ -248,8 +250,9 @@ class Model(nn.Module):
         return self
 
 
-def parse_model(d, ch):  # model_dict, input_channels(3)
-    LOGGER.info('\n%3s%18s%3s%10s  %-40s%-30s' % ('', 'from', 'n', 'params', 'module', 'arguments'))
+def parse_model(d, ch, pruning=False):  # model_dict, input_channels(3)
+    if not pruning:
+        LOGGER.info('\n%3s%18s%3s%10s  %-40s%-30s' % ('', 'from', 'n', 'params', 'module', 'arguments'))
     anchors, nc, gd, gw = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple']
     na = (len(anchors[0]) // 2) if isinstance(anchors, list) else anchors  # number of anchors
     no = na * (nc + 5)  # number of outputs = anchors * (classes + 5)
@@ -270,10 +273,18 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
                  conv_bn_hswish, MobileNetV3_InvertedResidual, stem, MBConvBlock]:
             c1, c2 = ch[f], args[0]
             if c2 != no:  # if not output
-                c2 = make_divisible(c2 * gw, 8)
+                c2_ = make_divisible(c2 * gw, 8)
+                if isinstance(args[-1],float) and m is not SPP and m is not SPPF:
+                    c2 = c2 * args[-1]
+                    args = args[:-1]
+                c2 = max(make_divisible(c2 * gw, 8), 8)
 
             args = [c1, c2, *args[1:]]
-            if m in [BottleneckCSP, C3, C3TR, C3Ghost]:
+            if m is C3:
+                args.insert(2, c2_)
+                args.insert(3, n)  # number of repeats
+                n = 1
+            if m in [BottleneckCSP, C3TR, C3Ghost]:
                 args.insert(2, n)  # number of repeats
                 n = 1
         elif m is nn.BatchNorm2d:
@@ -295,7 +306,8 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
         t = str(m)[8:-2].replace('__main__.', '')  # module type
         np = sum([x.numel() for x in m_.parameters()])  # number params
         m_.i, m_.f, m_.type, m_.np = i, f, t, np  # attach index, 'from' index, type, number params
-        LOGGER.info('%3s%18s%3s%10.0f  %-40s%-30s' % (i, f, n_, np, t, args))  # print
+        if not pruning:
+            LOGGER.info('%3s%18s%3s%10.0f  %-40s%-30s' % (i, f, n_, np, t, args))  # print
         save.extend(x % i for x in ([f] if isinstance(f, int) else f) if x != -1)  # append to savelist
         layers.append(m_)
         if i == 0:

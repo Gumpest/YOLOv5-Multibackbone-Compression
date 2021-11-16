@@ -240,6 +240,7 @@ def model_info(model, verbose=False, img_size=640):
         fs = ''
 
     LOGGER.info(f"Model Summary: {len(list(model.modules()))} layers, {n_p} parameters, {n_g} gradients{fs}")
+    return flops * img_size[0] / stride * img_size[1] / stride
 
 
 def load_classifier(name='resnet101', n=2):
