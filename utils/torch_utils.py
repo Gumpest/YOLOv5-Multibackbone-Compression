@@ -282,6 +282,21 @@ def copy_attr(a, b, include=(), exclude=()):
         else:
             setattr(a, k, v)
 
+def choose_backend(args):
+    if args.BackendType == "Academic":
+        return BackendType.Academic
+    if args.BackendType == "NNIE":
+        return BackendType.NNIE
+    if args.BackendType == "Tensorrt":
+        return BackendType.Tensorrt
+    if args.BackendType == "SNPE":    
+        return BackendType.SNPE
+    if args.BackendType == "PPLW8A16":
+        return BackendType.PPLW8A16
+
+    else:
+        print("error BackendType name, not support: ", args.BackendType)
+        exit(0)
 
 class EarlyStopping:
     # YOLOv5 simple early stopper
@@ -333,7 +348,10 @@ class ModelEMA:
             for k, v in self.ema.state_dict().items():
                 if v.dtype.is_floating_point:
                     v *= d
-                    v += (1. - d) * msd[k].detach()
+                    try:
+                        v += (1. - d) * msd[k].detach()
+                    except:
+                        v = msd[k].detach()
 
     def update_attr(self, model, include=(), exclude=('process_group', 'reducer')):
         # Update EMA attributes

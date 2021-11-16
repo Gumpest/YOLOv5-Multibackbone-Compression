@@ -34,7 +34,6 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 import val  # for end-of-epoch mAP
 from models.experimental import attempt_load
-from models.yolo import Model
 from utils.autoanchor import check_anchors
 from utils.datasets import create_dataloader
 from utils.general import labels_to_class_weights, increment_path, labels_to_image_weights, init_seeds, \
@@ -64,6 +63,15 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze, = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.weights, opt.single_cls, opt.evolve, opt.data, opt.cfg, \
         opt.resume, opt.noval, opt.nosave, opt.workers, opt.freeze
+
+    if opt.quantize:
+        from mqbench.convert_deploy import convert_deploy
+        from mqbench.prepare_by_platform import prepare_qat_fx_by_platform, BackendType
+        from mqbench.utils.state import enable_calibration, enable_quantization
+        from utils.torch_utils import choose_backend
+        from models.yolo_quantize import Model
+    else:
+        from models.yolo import Model
 
     # Directories
     w = save_dir / 'weights'  # weights dir
@@ -164,8 +172,9 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         lf = one_cycle(1, hyp['lrf'], epochs)  # cosine 1->hyp['lrf']
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)  # plot_lr_scheduler(optimizer, scheduler, epochs)
 
-    # EMA
-    ema = ModelEMA(model) if RANK in [-1, 0] else None
+    if not opt.quantize:
+        # EMA
+        ema = ModelEMA(model) if RANK in [-1, 0] else None
 
     # Resume
     start_epoch, best_fitness = 0, 0.0
@@ -175,10 +184,11 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             optimizer.load_state_dict(ckpt['optimizer'])
             best_fitness = ckpt['best_fitness']
 
-        # EMA
-        if ema and ckpt.get('ema'):
-            ema.ema.load_state_dict(ckpt['ema'].float().state_dict())
-            ema.updates = ckpt['updates']
+        if not opt.quantize:
+            # EMA
+            if ema and ckpt.get('ema'):
+                ema.ema.load_state_dict(ckpt['ema'].float().state_dict())
+                ema.updates = ckpt['updates']
 
         # Epochs
         start_epoch = ckpt['epoch'] + 1
@@ -266,6 +276,17 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 f'Using {train_loader.num_workers} dataloader workers\n'
                 f"Logging results to {colorstr('bold', save_dir)}\n"
                 f'Starting training for {epochs} epochs...')
+                
+    if opt.quantize:        
+        # quantize
+        model.train()
+        model = prepare_qat_fx_by_platform(model, BackendType.Tensorrt)
+        model.eval()
+        enable_calibration(model)
+        calibration_flag = True
+        # EMA
+        ema = ModelEMA(model) if RANK in [-1, 0] else None
+
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
         model.train()
 
@@ -318,6 +339,17 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                     loss *= WORLD_SIZE  # gradient averaged between devices in DDP mode
                 if opt.quad:
                     loss *= 4.
+
+            if opt.quantize:
+                # quantize initialize
+                if calibration_flag:
+                    if i >= 0:
+                        calibration_flag = False
+                        model.zero_grad()
+                        model.train()
+                        enable_quantization(model)
+                    else:
+                        continue
 
             # Backward
             scaler.scale(loss).backward()
@@ -466,6 +498,9 @@ def parse_opt(known=False):
     parser.add_argument('--save-period', type=int, default=-1, help='Save checkpoint every x epochs (disabled if < 1)')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
 
+    parser.add_argument('--quantize', action='store_true', help='run QAT with yolo')
+    parser.add_argument('--BackendType', type=str, default='Academic', help='backend for QAT deployment')
+    
     # Weights & Biases arguments
     parser.add_argument('--entity', default=None, help='W&B: Entity')
     parser.add_argument('--upload_dataset', action='store_true', help='W&B: Upload dataset as artifact table')
