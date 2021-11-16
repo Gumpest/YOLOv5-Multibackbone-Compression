@@ -283,8 +283,8 @@ def copy_attr(a, b, include=(), exclude=()):
             setattr(a, k, v)
 
 def choose_backend(args):
-    if args.BackendType == "Academic":
-        return BackendType.Academic
+    from mqbench.prepare_by_platform import BackendType
+
     if args.BackendType == "NNIE":
         return BackendType.NNIE
     if args.BackendType == "Tensorrt":
