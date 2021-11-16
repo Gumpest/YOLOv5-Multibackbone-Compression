@@ -1,7 +1,5 @@
 # YOLOv5-Compression
 
-
-
 ## Update News
 
 2021.10.30 复现TPH-YOLOv5
@@ -11,6 +9,10 @@
 2021.11.02 完成替换backbone为Shufflenetv2
 
 2021.11.05 完成替换backbone为Mobilenetv3Small
+
+2021.11.15 完成MQBench对YOLOv5系列量化支持
+
+2021.11.16 完成替换backbone为EfficientNetLite0
 
 ## Requirements
 
@@ -23,16 +25,16 @@
 
 Visdrone DataSet (1-5 size is 608，6-8 size is 640)
 
-| Model          | mAP   | mAP@50 | Parameters(M) | GFLOPs | FPS@CPU |
-| -------------- | ----- | ------ | ------------- | ------ | ------- |
-| YOLOv5n        | 13    | 26.2   | 1.78          | 4.2    |         |
-| YOLOv5s        | 18.4  | 34     | 7.05          | 15.9   |         |
-| YOLOv5m        | 21.6  | 37.8   | 20.91         | 48.2   |         |
-| YOLOv5l        | 23.2  | 39.7   | 46.19         | 108.1  |         |
-| YOLOv5x        | 24.3  | 40.8   | 86.28         | 204.4  |         |
-| YOLOv5xP2      | 30.00 | 49.29  | 90.96         | 314.2  |         |
-| YOLOv5xP2 CBAM | 30.13 | 49.40  | 91.31         | 315.1  |         |
-| YOLOv5x-TPH    | 30.26 | 49.39  | 86.08         | 238.9  |         |
+| Model          | mAP   | mAP@50 | Parameters(M) | GFLOPs |
+| -------------- | ----- | ------ | ------------- | ------ |
+| YOLOv5n        | 13    | 26.2   | 1.78          | 4.2    |
+| YOLOv5s        | 18.4  | 34     | 7.05          | 15.9   |
+| YOLOv5m        | 21.6  | 37.8   | 20.91         | 48.2   |
+| YOLOv5l        | 23.2  | 39.7   | 46.19         | 108.1  |
+| YOLOv5x        | 24.3  | 40.8   | 86.28         | 204.4  |
+| YOLOv5xP2      | 30.00 | 49.29  | 90.96         | 314.2  |
+| YOLOv5xP2 CBAM | 30.13 | 49.40  | 91.31         | 315.1  |
+| YOLOv5x-TPH    | 30.26 | 49.39  | 86.08         | 238.9  |
 
 训练脚本实例：
 
@@ -74,22 +76,23 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 
 消融实验如下：
 
-| box  | cls  | obj  | acc   |
-| ---- | ---- | ---- | ----- |
-| 0.05 | 0.5  | 1.0  | 37.90 |
-| 0.05 | 0.3  | 0.7  | 38.00 |
-| 0.05 | 0.2  | 0.4  |       |
+| box  | cls  | obj  | acc       |
+| ---- | ---- | ---- | --------- |
+| 0.05 | 0.5  | 1.0  | 37.90     |
+| 0.05 | 0.3  | 0.7  | **38.00** |
+| 0.05 | 0.2  | 0.4  | 37.5      |
 
 ![Loss](https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/img/image-20211109150606998.png)
 
 ### 轻量区
 
-| Model                    | mAP   | mAP@50 | Parameters(M) | GFLOPs | FPS@CPU | TrainCost(h) | Memory Cost(G) |
-| ------------------------ | ----- | ------ | ------------- | ------ | ------- | ------------ | -------------- |
-| YOLOv5s                  | 18.4  | 34     | 7.05          | 15.9   |         |              |                |
-| YOLOv5l-Ghostnet         | 18.4  | 33.8   | 24.27         | 42.4   |         | 27.44        | 4.97           |
-| YOLOv5l-Shufflenet       | 16.48 | 31.1   | 21.27         | 40.5   |         | 10.98        | 2.41           |
-| YOLOv5l-Mobilenetv3Small | 16.55 | 31.2   | 20.38         | 38.4   |         | 10.19        | 5.3            |
+| Model                     | mAP       | mAP@50 | Parameters(M) | GFLOPs   | FPS@CPU | TrainCost(h) | Memory Cost(G) |
+| ------------------------- | --------- | ------ | ------------- | -------- | ------- | ------------ | -------------- |
+| YOLOv5s                   | 18.4      | 34     | **7.05**      | **15.9** |         |              |                |
+| YOLOv5l-Ghostnet          | 18.4      | 33.8   | 24.27         | 42.4     |         | 27.44        | 4.97           |
+| YOLOv5l-ShufflenetV2      | 16.48     | 31.1   | 21.27         | 40.5     |         | 10.98        | 2.41           |
+| YOLOv5l-Mobilenetv3Small  | 16.55     | 31.2   | 20.38         | 38.4     |         | **10.19**    | 5.3            |
+| YOLOv5l-EfficientNetLite0 | **19.12** | **35** | 23.01         | 43.9     |         | 13.94        | **2.04**       |
 
 #### Ghostnet-YOLOv5
 
@@ -109,9 +112,15 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 
 （2）neck部分与head部分沿用YOLOv5l原结构
 
+#### EfficientNetLite0-YOLOv5
+
+（1）使用Lite0结构，且不使用SE模块
+
+（2）针对dropout_connect，手动赋值dropout_connect_rate，随着idx_stage变大而变大
+
 ## MQBench Quantize Aware Training
- MQBench是在实际硬件部署下评估量化算法的基准和框架。可以使用MQBench进行各种适合于硬件部署的量化训练。
-### Prerequisites
+ MQBench是在实际硬件部署下评估量化算法的基准和框架，可以使用MQBench进行各种适合于硬件部署的量化训练（QAT）
+### Requirements
 - PyTorch == 1.8.1
 ### Install MQBench Lib
 由于MQBench目前还在不断更新，选择0.0.2稳定版本作为本仓库的量化库。
@@ -129,12 +138,13 @@ python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yolov5n.y
 ```
 ## To do
 
-- [x] Multibackbone: Mobilenetv3-small
-- [x] Multibackbone: Shufflenetv2
+- [x] Multibackbone: MobilenetV3-small
+- [x] Multibackbone: ShufflenetV2
 - [x] Multibackbone: Ghostnet
-- [ ] Multibackbone: EfficientNet-Lite
+- [x] Multibackbone: EfficientNet-Lite0
 - [x] Multibackbone: TPH-YOLOv5
+- [ ] Multibackbone: Swin-YOLOv5
 - [ ] Pruner: Network slimming
 - [ ] Pruner: OneShot (L1, L2, FPGM), ADMM, NetAdapt, Gradual, End2End
-- [ ] Quantization: 4bit QAT
+- [x] Quantization: MQBench
 - [ ] Knowledge Distillation
