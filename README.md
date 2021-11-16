@@ -1,6 +1,6 @@
 # YOLOv5-Compression
 
-## Update News
+![](https://img.shields.io/badge/Update-News-blue.svg?style=plastic)
 
 2021.10.30 复现TPH-YOLOv5
 
@@ -41,12 +41,11 @@ Visdrone DataSet (1-5 size is 608，6-8 size is 640)
 ```shell
 nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yolov5n.yaml --epochs 300 --batch-size 8 --img 608 --nosave --device 0,1 --sync-bn >> yolov5n.txt &
 ```
-
 ## Multi-Backbone
 
 ### 精度区
 
-#### TPH-YOLOv5
+#### TPH-YOLOv5 ![](https://img.shields.io/badge/Model-BeiHangUni-yellowgreen.svg?style=plastic)
 
 消融实验如下：
 
@@ -94,25 +93,25 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 | YOLOv5l-Mobilenetv3Small  | 16.55     | 31.2   | 20.38         | 38.4     |         | **10.19**    | 5.3            |
 | YOLOv5l-EfficientNetLite0 | **19.12** | **35** | 23.01         | 43.9     |         | 13.94        | **2.04**       |
 
-#### Ghostnet-YOLOv5
+#### Ghostnet-YOLOv5 ![](https://img.shields.io/badge/Model-HuaWei-orange.svg?style=plastic)
 
 （1）为保持一致性，下采样的DW的kernel_size均等于3
 
 （2）neck部分与head部分沿用YOLOv5l原结构
 
-#### Shufflenet-YOLOv5
+#### Shufflenet-YOLOv5 ![](https://img.shields.io/badge/Model-Megvii-orange.svg?style=plastic)
 
 （1）Focus Layer不利于芯片部署，频繁的slice操作会让缓存占用严重
 
 （2）避免多次使用C3 Leyer以及高通道的C3 Layer（违背G1与G3准则）
 
-#### Mobilenetv3Small-YOLOv5
+#### Mobilenetv3Small-YOLOv5 ![](https://img.shields.io/badge/Model-Google-orange.svg?style=plastic)
 
 （1）尊重原文结构，精确使用hard-Swish以及SE层
 
 （2）neck部分与head部分沿用YOLOv5l原结构
 
-#### EfficientNetLite0-YOLOv5
+#### EfficientNetLite0-YOLOv5 ![](https://img.shields.io/badge/Model-Google-orange.svg?style=plastic)
 
 （1）使用Lite0结构，且不使用SE模块
 
@@ -122,7 +121,7 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
  MQBench是在实际硬件部署下评估量化算法的基准和框架，可以使用MQBench进行各种适合于硬件部署的量化训练（QAT）
 ### Requirements
 - PyTorch == 1.8.1
-### Install MQBench Lib
+### Install MQBench Lib ![](https://img.shields.io/badge/Tec-Sensetime-brightgreen.svg?style=plastic)
 由于MQBench目前还在不断更新，选择0.0.2稳定版本作为本仓库的量化库。
 ```
 git clone https://github.com/ZLkanyo009/MQBench.git
