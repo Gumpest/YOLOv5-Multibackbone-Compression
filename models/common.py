@@ -408,7 +408,7 @@ class BottleneckCSP(nn.Module):
 
 class C3(nn.Module):
     # CSP Bottleneck with 3 convolutions
-    def __init__(self, c1, c2, c2o, n=1, shortcut=True, g=1, e=[0.5,0.5], rate=[1.0 for _ in range(9)]):  # ch_in, ch_out, number, shortcut, groups, expansion
+    def __init__(self, c1, c2, c2o, n=1, shortcut=True, g=1, e=[0.5,0.5], rate=[1.0 for _ in range(12)]):  # ch_in, ch_out, number, shortcut, groups, expansion 
         super().__init__()
         # c_ = int(c2 * e)  # hidden channels
         c1_ = int(c2o * e[0])
