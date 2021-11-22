@@ -411,8 +411,12 @@ class C3(nn.Module):
     def __init__(self, c1, c2, c2o, n=1, shortcut=True, g=1, e=[0.5,0.5], rate=[1.0 for _ in range(12)]):  # ch_in, ch_out, number, shortcut, groups, expansion 
         super().__init__()
         # c_ = int(c2 * e)  # hidden channels
-        c1_ = int(c2o * e[0])
-        c2_ = int(c2o * e[1])
+        if isinstance(e,list):
+            c1_ = int(c2o * e[0])
+            c2_ = int(c2o * e[1])
+        else:
+            c1_ = int(c2o * e)
+            c2_ = int(c2o * e)
         self.cv1 = Conv(c1, c1_, 1, 1)
         self.cv2 = Conv(c1, c2_, 1, 1)
         self.cv3 = Conv(c1_+c2_, c2, 1)  # act=FReLU(c2)
@@ -426,7 +430,7 @@ class C3(nn.Module):
 class C3TR(C3):
     # C3 module with TransformerBlock()
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):
-        super().__init__(c1, c2, n, shortcut, g, e)
+        super().__init__(c1, c2, c2, n, shortcut, g, e)
         c_ = int(c2 * e)
         self.m = TransformerBlock(c_, c_, 4, n)
 
@@ -434,7 +438,7 @@ class C3TR(C3):
 class C3SPP(C3):
     # C3 module with SPP()
     def __init__(self, c1, c2, k=(5, 9, 13), n=1, shortcut=True, g=1, e=0.5):
-        super().__init__(c1, c2, n, shortcut, g, e)
+        super().__init__(c1, c2, c2, n, shortcut, g, e)
         c_ = int(c2 * e)
         self.m = SPP(c_, c_, k)
 
@@ -442,7 +446,7 @@ class C3SPP(C3):
 class C3Ghost(C3):
     # C3 module with GhostBottleneck()
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):
-        super().__init__(c1, c2, n, shortcut, g, e)
+        super().__init__(c1, c2, c2, n, shortcut, g, e)
         c_ = int(c2 * e)  # hidden channels
         self.m = nn.Sequential(*[GhostBottleneck(c_, c_) for _ in range(n)])
 
