@@ -274,7 +274,7 @@ def parse_model(d, ch, pruning=False):  # model_dict, input_channels(3)
             c1, c2 = ch[f], args[0]
             if c2 != no:  # if not output
                 c2_ = make_divisible(c2 * gw, 8)
-                if isinstance(args[-1],float) and m is not SPP and m is not SPPF:
+                if isinstance(args[-1],float) and m is not SPP and m is not SPPF and m is not MBConvBlock:
                     c2 = c2 * args[-1]
                     args = args[:-1]
                 c2 = max(make_divisible(c2 * gw, 8), 8)
