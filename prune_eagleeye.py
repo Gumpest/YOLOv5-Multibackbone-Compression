@@ -116,11 +116,12 @@ if __name__ == '__main__':
 
     # Create model
     model = Model(opt.cfg).to(device)
-    ckpt = torch.load(opt.weights, map_location=device)  # load checkpoint
-    exclude = []  # exclude keys
-    state_dict = ckpt['model'].float().state_dict()  # to FP32
+    ckpt = torch.load(opt.weights, map_location=device)  
+    exclude = []                                         # exclude keys
+    state_dict = ckpt['model'].float().state_dict()      # to FP32
     state_dict = intersect_dicts(state_dict, model.state_dict(), exclude=exclude)  # intersect
-    model.load_state_dict(state_dict, strict=True)  # load
+    model.load_state_dict(state_dict, strict=True)       # load strictly
 
+    # Parse Module
     CBL_idx, ignore_idx, from_to_map = parse_module_defs(model.yaml)
     rand_prune_and_eval(model,ignore_idx,opt)

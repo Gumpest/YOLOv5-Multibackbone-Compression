@@ -108,9 +108,18 @@ def weights_inheritance(model, compact_model, from_to_map, maskbndict):
     modelstate = model.state_dict()
     pruned_model_state = compact_model.state_dict()
     assert pruned_model_state.keys() == modelstate.keys()
+    
+    last_idx=0
+    for (layername, layer) in model.named_modules():
+        try:
+            last_idx=max(last_idx, int(layername.split('.')[1]))
+        except:
+            pass
+ 
+
     for ((layername, layer),(pruned_layername, pruned_layer)) in zip(model.named_modules(), compact_model.named_modules()):
         assert layername == pruned_layername
-        if isinstance(layer, nn.Conv2d) and not layername.startswith("model.24"):
+        if isinstance(layer, nn.Conv2d) and not layername.startswith(f"model.{last_idx}"):  # --------------------------------
             convname = layername[:-4] + "bn"
             if convname in from_to_map.keys():
                 former = from_to_map[convname]
@@ -147,7 +156,7 @@ def weights_inheritance(model, compact_model, from_to_map, maskbndict):
             pruned_layer.running_mean = layer.running_mean[out_idx].clone()
             pruned_layer.running_var = layer.running_var[out_idx].clone()
 
-        if isinstance(layer, nn.Conv2d) and layername.startswith("model.24"):
+        if isinstance(layer, nn.Conv2d) and layername.startswith(f"model.{last_idx}"):  # --------------------------------
             former = from_to_map[layername]
             in_idx = np.squeeze(np.argwhere(np.asarray(maskbndict[former].cpu().numpy())))
             pruned_layer.weight.data = layer.weight.data[:, in_idx, :, :]
