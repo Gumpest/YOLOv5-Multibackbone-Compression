@@ -67,7 +67,7 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 
 结构图如下：
 
-![TPH-YOLOv5](https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/img/TPH-YOLOv5.png)
+<img src="https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/img/TPH-YOLOv5.png" alt="TPH-YOLOv5" width="600px" height="300px" />
 
 注意：
 
@@ -87,7 +87,8 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 | 0.05 | 0.3  | 0.7  | **38.00** |
 | 0.05 | 0.2  | 0.4  | 37.5      |
 
-![Loss](https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/img/image-20211109150606998.png)
+<img src="https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/img/image-20211109150606998.png" alt="loss" width="600px" />
+
 
 ### 轻量区
 
@@ -102,7 +103,7 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 
 #### GhostNet-YOLOv5 ![](https://img.shields.io/badge/Model-HuaWei-orange.svg?style=plastic)
 
-![GhostNet](https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/img/GhostNet.jpg)
+<img src="https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/img/GhostNet.jpg" alt="GhostNet" width="500px" height="250px" />
 
 （1）为保持一致性，下采样的DW的kernel_size均等于3
 
@@ -112,7 +113,7 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 
 #### ShuffleNet-YOLOv5 ![](https://img.shields.io/badge/Model-Megvii-orange.svg?style=plastic)
 
-![Shffulenet](https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/img/Shffulenet.png)
+<img src="https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/img/Shffulenet.png" alt="Shffulenet" width="400px" />
 
 （1）Focus Layer不利于芯片部署，频繁的slice操作会让缓存占用严重
 
@@ -122,7 +123,8 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 
 #### MobileNetv3Small-YOLOv5 ![](https://img.shields.io/badge/Model-Google-orange.svg?style=plastic)
 
-![Mobilenetv3s](https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/img/Mobilenetv3s.jpg)
+
+<img src="https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/img/Mobilenetv3s.jpg" alt="Mobilenetv3s" width="500px" />
 
 （1）原文结构，部分使用Hard-Swish激活函数以及SE模块
 
@@ -132,7 +134,8 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 
 #### EfficientNetLite0-YOLOv5 ![](https://img.shields.io/badge/Model-Google-orange.svg?style=plastic)
 
-![efficientlite](https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/img/efficientlite.jpg)
+
+<img src="https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/img/efficientlite.jpg" alt="efficientlite" width="500px" />
 
 （1）使用Lite0结构，且不使用SE模块
 
@@ -142,7 +145,9 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 
 #### PP-LCNet-YOLOv5  ![](https://img.shields.io/badge/Model-Baidu-orange.svg?style=plastic)
 
-![PP-LCNet](https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/img/PP-LCNet.png)
+
+<img src="https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/img/PP-LCNet.png" alt="PP-LCNet" width="500px" />
+
 
 （1）使用PP-LCNet-1x结构，在网络末端使用SE以及5*5卷积核
 
