@@ -121,6 +121,8 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 
 （3）中间通道不变
 
+[PreTrained Pt File](https://disk.pku.edu.cn:443/link/A5ED89B7B190FCF1C8187A0A8AF20C4F)
+
 #### MobileNetv3Small-YOLOv5 ![](https://img.shields.io/badge/Model-Google-orange.svg?style=plastic)
 
 
