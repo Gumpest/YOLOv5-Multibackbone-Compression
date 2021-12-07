@@ -45,21 +45,22 @@ def rand_prune_and_eval(model, ignore_idx, opt):
         for name, module in model.named_modules():
             if isinstance(module, nn.Conv2d):
                 if name in ignore_conv_idx:
-                    mask = torch.ones(module.weight.data.size()[0]).to(device)
+                    mask = torch.ones(module.weight.data.size()[0]).to(device) # [N, C, H, W]
                 else:
                     rand_remain_ratio = (max_remain_ratio - opt.min_remain_ratio) * (np.random.rand(1)) + opt.min_remain_ratio
                     # rand_remain_ratio = 0.7
                     mask = obtain_filtermask_l1(module, rand_remain_ratio).to(device)
-                maskbndict[name[:-4] + "bn"] = mask
+                # name: model.0.conv
+                # module: Conv2d(3, 16, kernel_size=(6, 6), stride=(2, 2), padding=(2, 2), bias=False)
+                maskbndict[name.replace('conv', 'bn')] = mask
                 maskconvdict[name] = mask
 
-        
         pruned_yaml = update_yaml(pruned_yaml,model,ignore_conv_idx,maskconvdict,opt)
 
         compact_model = Model(pruned_yaml, pruning=True).to(device)
         current_flops = compact_model.flops
-        delta = 0.02
-        if (current_flops/origin_flops>opt.remain_ratio+delta) or (current_flops/origin_flops<opt.remain_ratio-delta):
+        opt.delta = 0.02
+        if (current_flops/origin_flops>opt.remain_ratio+opt.delta) or (current_flops/origin_flops<opt.remain_ratio-opt.delta):
             del compact_model
             del pruned_yaml
             continue
@@ -106,6 +107,7 @@ if __name__ == '__main__':
     parser.add_argument('--min_remain_ratio', type=float, default=0.2)
     parser.add_argument('--max_iter', type=int, default=700, help='maximum number of arch search')
     parser.add_argument('--remain_ratio', type=float, default=0.5, help='the whole parameters/FLOPs remain ratio')
+    parser.add_argument('--delta', type=float, default=0.02, help='scale of arch search')
     opt = parser.parse_args()
     opt.cfg = check_file(opt.cfg)  # check file
     set_logging()

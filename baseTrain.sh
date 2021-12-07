@@ -9,4 +9,8 @@
 # nohup python -m torch.distributed.launch --nproc_per_node 2 --master_port 2006 train.py --data VisDrone.yaml --weights yolov5l.pt --cfg models/lightModels/yolov5lMobilenetv3Small.yaml --epochs 300 --batch-size 8 --img 640 --nosave --device 0,1 --sync-bn >> yolov5lMobilenetv3Small.out &
 # nohup python -m torch.distributed.launch --nproc_per_node 2 --master_port 2002 train.py --data VisDrone.yaml --weights yolov5l.pt --cfg models/lightModels/yolov5lEfficientLite.yaml --epochs 300 --batch-size 8 --img 640 --nosave --device 0,2 --sync-bn >> yolov5lEfficientLite.out &
 # nohup python -m torch.distributed.launch --nproc_per_node 2 --master_port 2000 train.py --data VisDrone.yaml --weights yolov5l.pt --cfg models/lightModels/yolov5lPP-LC.yaml --epochs 300 --batch-size 8 --img 640 --nosave --device 0,3 --sync-bn >> yolov5lPP-LC.out &
-nohup python -m torch.distributed.launch --nproc_per_node 2 --master_port 2003 train.py --data VisDrone.yaml --weights yolov5s.pt --cfg models/prunModels/yolov5s-prun.yaml --epochs 300 --batch-size 8 --img 608 --nosave --device 1,2 --sync-bn >> yolov5s.out &
+# nohup python -m torch.distributed.launch --nproc_per_node 2 --master_port 2003 train.py --data VisDrone.yaml --weights runs/train/exp152/weights/last-pruned.pt --cfg models/prunModels/yolov5s-0.6-pruned.yaml --epochs 200 --batch-size 8 --img 608 --nosave --device 0,1 --sync-bn >> yolov5spruned.out &
+
+
+# nohup python pruneEagleEye.py --weights /home/zy/DVSTrack/yolov5/weights/yolon608.pt --cfg models/prunModels/yolov5n-pruning.yaml --data data/DVSPerson.yaml --path yolov5n-DVSPerson-pruned.yaml --max_iter 1200 --remain_ratio 0.7 --delta 0.15 >> DVSsearch.out &
+# nohup python pruneEagleEye.py --weights runs/train/exp152/weights/last.pt --cfg models/prunModels/yolov5s-pruning.yaml --data data/VisDrone.yaml --path yolov5s-pruned.yaml --max_iter 1000 --remain_ratio 0.6 --delta 0.05 >> yolos-search.out &

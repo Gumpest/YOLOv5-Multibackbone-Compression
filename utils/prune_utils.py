@@ -93,14 +93,14 @@ def parse_module_defs(d):
 
 def obtain_filtermask_l1(conv_module, rand_remain_ratio):
     w_copy = conv_module.weight.data.abs().clone()
-    w_copy = torch.sum(w_copy, dim=(1,2,3))
+    w_copy = torch.sum(w_copy, dim=(1,2,3))  # each kernel owns one
     length = w_copy.size()[0]
     num_retain = int(length*rand_remain_ratio)
     if num_retain<2:
         num_retain=2
-    _,y = torch.topk(w_copy,num_retain)
+    _, indice = torch.topk(w_copy, num_retain)  # tensor([6, 1, 3, 2], device='cuda:0')
     mask = torch.zeros(length)
-    mask[y.cpu()] = 1
+    mask[indice.cpu()] = 1
 
     return mask
 
@@ -169,14 +169,9 @@ def update_yaml_loop(d, name, maskconvdict):
     no = na * (nc + 5)  # number of outputs = anchors * (classes + 5)
     ch = [3]
     c2 = ch[-1]
-    for i, (f, n, m, args) in enumerate(d['backbone'] + d['head']):
+    for i, (f, n, m, args) in enumerate(d['backbone'] + d['head']):  # from, number, module, args
         m = eval(m) if isinstance(m, str) else m  # eval strings
-        # for j, a in enumerate(args):
-        #     try:
-        #         args[j] = eval(a) if isinstance(a, str) else a  # eval strings
-        #     except:
-        #         pass
-
+        
         n = max(round(n * gd), 1) if n > 1 else n  # depth gain
         named_m_base = "model.{}".format(i)
         if m is Conv:

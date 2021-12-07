@@ -13,22 +13,22 @@ anchors:
 backbone:
   # [from, number, module, args]
   [[-1, 1, stem, [32, 'ReLU6']],             # 0-P1/2  ch_out, act
-   [-1, 1, MBConvBlock, [16, 3, 1, 1, 0]],   # 1 ch_out, k_size, s, expand, se
+   [-1, 1, MBConvBlock, [16, 3, 1, 1, 0]],   # 1 ch_out, k_size, s, expand
 
-   [-1, 1, MBConvBlock, [24, 3, 2, 6, 0.028]],   # 2-P2/4 ch_out, k_size, s, expand, se
+   [-1, 1, MBConvBlock, [24, 3, 2, 6, 0.028, True]],   # 2-P2/4 ch_out, k_size, s, expand, drop_connect_rate, se
    [-1, 1, MBConvBlock, [24, 3, 1, 6, 0.057]],
 
-   [-1, 1, MBConvBlock, [40, 5, 2, 6, 0.085]],   # 4-P3/8 ch_out, k_size, s, expand, se
+   [-1, 1, MBConvBlock, [40, 5, 2, 6, 0.085]],   # 4-P3/8 ch_out, k_size, s, expand, drop_connect_rate, se
    [-1, 1, MBConvBlock, [40, 5, 1, 6, 0.114]],
 
-   [-1, 1, MBConvBlock, [80, 3, 2, 6, 0.142]],   # 6-P4/16 ch_out, k_size, s, expand, se
+   [-1, 1, MBConvBlock, [80, 3, 2, 6, 0.142]],   # 6-P4/16 ch_out, k_size, s, expand, drop_connect_rate, se
    [-1, 1, MBConvBlock, [80, 3, 1, 6, 0.171]],
    [-1, 1, MBConvBlock, [80, 3, 1, 6, 0.2]],
    [-1, 1, MBConvBlock, [112, 5, 1, 6, 0.228]],  # 9
    [-1, 1, MBConvBlock, [112, 5, 1, 6, 0.257]],
    [-1, 1, MBConvBlock, [112, 5, 1, 6, 0.285]],
 
-   [-1, 1, MBConvBlock, [192, 5, 2, 6, 0.314]],  # 12-P5/32 ch_out, k_size, s, expand, se
+   [-1, 1, MBConvBlock, [192, 5, 2, 6, 0.314]],  # 12-P5/32 ch_out, k_size, s, expand, drop_connect_rate, se
    [-1, 1, MBConvBlock, [192, 5, 1, 6, 0.342]],
    [-1, 1, MBConvBlock, [192, 5, 1, 6, 0.371]],
    [-1, 1, MBConvBlock, [192, 5, 1, 6, 0.4]],

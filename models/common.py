@@ -114,8 +114,7 @@ class MBConvBlock(nn.Module):
         # Squeeze and Excitation layer, if desired
         if self.has_se:
             num_squeezed_channels = max(1, int(inp * se_ratio))
-            self._se_reduce = nn.Conv2d(in_channels=oup, out_channels=num_squeezed_channels, kernel_size=1)
-            self._se_expand = nn.Conv2d(in_channels=num_squeezed_channels, out_channels=oup, kernel_size=1)
+            self.se = SeBlock(oup, 4)
 
         # Output phase
         self._project_conv = nn.Conv2d(in_channels=oup, out_channels=final_oup, kernel_size=1, bias=False)
@@ -139,9 +138,7 @@ class MBConvBlock(nn.Module):
 
         # Squeeze and Excitation
         if self.has_se:
-            x_squeezed = nn.AdaptiveAvgPool2d(x, 1)
-            x_squeezed = self._se_expand(self._relu(self._se_reduce(x_squeezed)))
-            x = torch.sigmoid(x_squeezed) * x
+            x = self.se(x)
 
         x = self._bn2(self._project_conv(x))
 
