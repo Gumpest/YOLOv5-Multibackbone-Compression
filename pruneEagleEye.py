@@ -48,23 +48,22 @@ def rand_prune_and_eval(model, ignore_idx, opt):
                     mask = torch.ones(module.weight.data.size()[0]).to(device) # [N, C, H, W]
                 else:
                     rand_remain_ratio = (max_remain_ratio - opt.min_remain_ratio) * (np.random.rand(1)) + opt.min_remain_ratio
-                    # rand_remain_ratio = 0.7
+                    # rand_remain_ratio = 1.0
                     mask = obtain_filtermask_l1(module, rand_remain_ratio).to(device)
                 # name: model.0.conv
                 # module: Conv2d(3, 16, kernel_size=(6, 6), stride=(2, 2), padding=(2, 2), bias=False)
-                maskbndict[name.replace('conv', 'bn')] = mask
+                maskbndict[(name[:-4] + 'bn')] = mask
                 maskconvdict[name] = mask
 
-        pruned_yaml = update_yaml(pruned_yaml,model,ignore_conv_idx,maskconvdict,opt)
+        pruned_yaml = update_yaml(pruned_yaml, model, ignore_conv_idx, maskconvdict, opt)
 
         compact_model = Model(pruned_yaml, pruning=True).to(device)
         current_flops = compact_model.flops
-        opt.delta = 0.02
-        if (current_flops/origin_flops>opt.remain_ratio+opt.delta) or (current_flops/origin_flops<opt.remain_ratio-opt.delta):
+        if (current_flops/origin_flops > opt.remain_ratio+opt.delta) or (current_flops/origin_flops < opt.remain_ratio-opt.delta):
             del compact_model
             del pruned_yaml
             continue
-        weights_inheritance(model,compact_model,from_to_map,maskbndict)
+        weights_inheritance(model, compact_model, from_to_map, maskbndict)
         mAP = ABE(compact_model)
         print('mAP@0.5 of candidate sub-network is {:f}'.format(mAP))
 

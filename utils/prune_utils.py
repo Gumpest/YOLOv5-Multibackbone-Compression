@@ -115,7 +115,6 @@ def weights_inheritance(model, compact_model, from_to_map, maskbndict):
             last_idx=max(last_idx, int(layername.split('.')[1]))
         except:
             pass
- 
 
     for ((layername, layer),(pruned_layername, pruned_layer)) in zip(model.named_modules(), compact_model.named_modules()):
         assert layername == pruned_layername
@@ -132,6 +131,7 @@ def weights_inheritance(model, compact_model, from_to_map, maskbndict):
                         w = w.unsqueeze(0)
                     pruned_layer.weight.data = w
                 if isinstance(former, list):
+                # ['model.2.m.0.cv2.bn', 'model.2.cv2.bn']
                     orignin = [modelstate[i+".weight"].shape[0] for i in former]
                     formerin = []
                     for it in range(len(former)):
@@ -159,8 +159,12 @@ def weights_inheritance(model, compact_model, from_to_map, maskbndict):
         if isinstance(layer, nn.Conv2d) and layername.startswith(f"model.{last_idx}"):  # --------------------------------
             former = from_to_map[layername]
             in_idx = np.squeeze(np.argwhere(np.asarray(maskbndict[former].cpu().numpy())))
-            pruned_layer.weight.data = layer.weight.data[:, in_idx, :, :]
-            pruned_layer.bias.data = layer.bias.data
+            pruned_layer.weight.data = layer.weight.data[:, in_idx, :, :].clone()
+            pruned_layer.bias.data = layer.bias.data.clone()
+
+    m = model.module.model[-1] if hasattr(model, 'module') else model.model[-1]
+    cm = compact_model.module.model[-1] if hasattr(compact_model, 'module') else compact_model.model[-1]
+    cm.anchors = m.anchors.clone()
 
 
 def update_yaml_loop(d, name, maskconvdict):
@@ -171,7 +175,7 @@ def update_yaml_loop(d, name, maskconvdict):
     c2 = ch[-1]
     for i, (f, n, m, args) in enumerate(d['backbone'] + d['head']):  # from, number, module, args
         m = eval(m) if isinstance(m, str) else m  # eval strings
-        
+
         n = max(round(n * gd), 1) if n > 1 else n  # depth gain
         named_m_base = "model.{}".format(i)
         if m is Conv:
