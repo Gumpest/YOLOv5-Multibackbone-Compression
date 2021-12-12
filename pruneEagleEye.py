@@ -37,7 +37,7 @@ def rand_prune_and_eval(model, ignore_idx, opt):
     #     data = f.read()
     #     oriyaml = yaml.load(data, Loader=ruamel.yaml.RoundTripLoader)  # model dict
     
-    ABE = AdaptiveBNEval(model,opt,device,hyp)
+    ABE = AdaptiveBNEval(model, opt, device, hyp)
 
     while True:
         pruned_yaml = deepcopy(oriyaml)
@@ -88,8 +88,6 @@ def rand_prune_and_eval(model, ignore_idx, opt):
         del pruned_yaml
         if candidates > opt.max_iter:
             break
-
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

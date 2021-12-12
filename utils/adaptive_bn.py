@@ -118,7 +118,7 @@ class AdaptiveBNEval(object):
     def __call__(self, compact_model):
         compact_model.train()
         with torch.no_grad():
-            for i, (imgs, targets, paths, _) in tqdm(enumerate(self.trainloader),total=len(self.trainloader)):
+            for i, (imgs, targets, paths, _) in tqdm(enumerate(self.trainloader), total=len(self.trainloader)):
                 imgs = imgs.to(self.device, non_blocking=True).float() / 255.0  # uint8 to float32, 0-255 to 0.0-1.0
 
                 # Forward
@@ -129,6 +129,7 @@ class AdaptiveBNEval(object):
                 if i > 20:
                     break
 
+        # (mp, mr, map50, map, *(loss.cpu() / len(dataloader)).tolist()), maps, t
         results, _, _ = val.run(self.data_dict,
                                 batch_size=self.batch_size * 2,
                                 imgsz=self.imgsz_test,

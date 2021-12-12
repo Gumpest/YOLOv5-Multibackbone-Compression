@@ -18,6 +18,8 @@
 
 2021.11.26 完成替换backbone为PP-LCNet-1x
 
+2021.12.12 完成SwinTrans-YOLOv5（C3STR）
+
 ## Requirements
 
 环境安装
@@ -63,21 +65,17 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 | **YOLOv5x-TPH**(640)  | 30.26 | 49.39  | 96.76         | 345.0  |
 | **YOLOv5x-TPH(1536)** | 38.00 | 60.56  | 94.34         | 268.1  |
 
-组件：P2检测头、CBAM、Transformer Block
+组件：P2 Head、CBAM、TPH、BiFPN、SPP
 
 结构图如下：
 
 <img src="https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/img/TPH-YOLOv5.png" alt="TPH-YOLOv5" width="600px" height="300px" />
 
-注意：
+1、TransBlock的数量会根据YOLO规模的不同而改变，标准结构作用于YOLOv5m
 
-1、避免TransBlock导致显存爆炸，MultiAttentionHead中将注意力头的数量减少至4，并且FFN中的两个全连接层从linear(c1, 4*c1)改为linear(c1, c1)，去掉GELU函数
+2、当YOLOv5x为主体与标准结构的区别是：（1）首先去掉14和19的CBAM模块（2）降低与P2关联的通道数（128）（3）在输出头之前会添加SPP模块，注意SPP的kernel随着P的像素减小而减小（4）在CBAM之后进行输出（5）只保留backbone以及最后一层输出的TransBlock（6）采用BiFPN作为neck
 
-2、TransBlock的数量会根据YOLO规模的不同而改变，标准结构作用于YOLOv5m
-
-3、当YOLOv5x为主体与标准结构的区别是：（1）首先去掉14和19的CBAM模块（2）降低与P2关联的通道数（128）（3）在输出头之前会添加SPP模块，注意SPP的kernel随着P的像素减小而减小（4）在CBAM之后进行输出（5）只保留backbone以及最后一层输出的TransBlock（6）采用BiFPN作为neck
-
-4、更改不同Loss分支的权重：如下图，当训练集的分类与置信度损失还在下降时，验证集的分类与置信度损失开始反弹，说明出现了过拟合，需要降低这两个任务的权重
+3、更改不同Loss分支的权重：如下图，当训练集的分类与置信度损失还在下降时，验证集的分类与置信度损失开始反弹，说明出现了过拟合，需要降低这两个任务的权重
 
 消融实验如下：
 
@@ -88,6 +86,18 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 | 0.05 | 0.2  | 0.4  | 37.5      |
 
 <img src="https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/img/image-20211109150606998.png" alt="loss" width="600px" />
+
+#### SwinTrans-YOLOv5![](https://img.shields.io/badge/Model-Microsoft-yellow.svg?style=plastic)
+
+（1）Window size替换成检测size的公约数8
+
+（2）create_mask封装为函数，由init函数变为forward函数执行
+
+（3）当img_size小于window_size或不是其公倍数时，进行Padding
+
+（4）forward函数前后对输入输出reshape
+
+
 
 
 ### 轻量区
@@ -178,6 +188,12 @@ python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yolov5n.y
 ```
 ## Pruning
 
+| Model                | mAP  | mAP@50 | Parameters(M) | GFLOPs | FPS@CPU |
+| -------------------- | ---- | ------ | ------------- | ------ | ------- |
+| YOLOv5s              | 18.4 | 34     | 7.05          | 15.9   |         |
+| YOLOv5n              | 13   | 26.2   | 1.78          | 4.2    |         |
+| YOLOv5s-EagleEye@0.6 | 14.3 | 27.9   | 4.59          | 9.6    |         |
+
 基于YOLOv5的块状结构设计，该仓库采用基于搜索的通道剪枝方法[EagleEye: Fast Sub-net Evaluation for Efficient Neural Network Pruning](https://arxiv.org/abs/2007.02491)。核心思想是随机搜索到大量符合目标约束的子网，然后快速更新校准BN层的均值与方差参数，并在验证集上测试校准后全部子网的精度。精度最高的子网拥有最好的架构，经微调恢复后能达到较高的精度。
 
 ![eagleeye](https://github.com/Cydia2018/YOLOv5-Multibackbone-Compression/blob/main/img/eagleeye.png)
@@ -196,12 +212,12 @@ python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yolov5n.y
 python train.py --data data/VisDrone.yaml --imgsz 640 --weights yolov5s.pt --cfg models/prunModels/yolov5s-pruning.yaml --device 0
 ```
 
-（注意训练其他版本的模型，参考models/yolov5s-visdrone.yaml进行修改。目前只支持原版v5架构）
+（注意训练其他模型，参考/prunModels/yolov5s-pruning.yaml进行修改。目前已支持v6架构）
 
 2. 搜索最优子网
 
 ```shell
-python prune_eagleeye.py --weights path_to_trained_yolov5_model --cfg models/prunModels/yolov5s-pruning.yaml --data data/VisDrone.yaml --path path_to_pruned_yolov5_yaml --max_iter maximum number of arch search --remain_ratio the whole FLOPs remain ratio
+python pruneEagleEye.py --weights path_to_trained_yolov5_model --cfg models/prunModels/yolov5s-pruning.yaml --data data/VisDrone.yaml --path path_to_pruned_yolov5_yaml --max_iter maximum number of arch search --remain_ratio the whole FLOPs remain ratio --delta 0.02
 ```
 
 3. 微调恢复精度
@@ -212,15 +228,22 @@ python train.py --data data/VisDrone.yaml --imgsz 640 --weights path_to_pruned_y
 
 ## To do
 
-- [x] Multibackbone: MobilenetV3-small
-- [x] Multibackbone: ShufflenetV2
-- [x] Multibackbone: Ghostnet
+- [x] Multibackbone: MobileNetV3-small
+- [x] Multibackbone: ShuffleNetV2
+- [x] Multibackbone: GhostNet
 - [x] Multibackbone: EfficientNet-Lite0
 - [x] Multibackbone: PP-LCNet
 - [x] Multibackbone: TPH-YOLOv5
-- [ ] Multibackbone: Swin-YOLOv5
+- [x] Module: SwinTrans（C3STR）
+- [ ] Module: Deformable Convolution
 - [ ] Pruner: Network slimming
 - [x] Pruner: EagleEye
 - [ ] Pruner: OneShot (L1, L2, FPGM), ADMM, NetAdapt, Gradual, End2End
 - [x] Quantization: MQBench
 - [ ] Knowledge Distillation
+
+## Acknowledge
+
+感谢TPH-YOLOv5作者Xingkui Zhu
+
+官方实现[cv516Buaa/tph-yolov5 (github.com)](https://github.com/cv516Buaa/tph-yolov5)

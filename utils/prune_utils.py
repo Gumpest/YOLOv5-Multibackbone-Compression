@@ -109,10 +109,10 @@ def weights_inheritance(model, compact_model, from_to_map, maskbndict):
     pruned_model_state = compact_model.state_dict()
     assert pruned_model_state.keys() == modelstate.keys()
     
-    last_idx=0
+    last_idx = 0  # find last layer index
     for (layername, layer) in model.named_modules():
         try:
-            last_idx=max(last_idx, int(layername.split('.')[1]))
+            last_idx = max(last_idx, int(layername.split('.')[1]))  # 0 in model.0.conv 
         except:
             pass
 
@@ -120,11 +120,13 @@ def weights_inheritance(model, compact_model, from_to_map, maskbndict):
         assert layername == pruned_layername
         if isinstance(layer, nn.Conv2d) and not layername.startswith(f"model.{last_idx}"):  # --------------------------------
             convname = layername[:-4] + "bn"
+
+            # Clone in_idx and out_idx changed layer
             if convname in from_to_map.keys():
                 former = from_to_map[convname]
                 if isinstance(former, str):
                     out_idx = np.squeeze(np.argwhere(np.asarray(maskbndict[layername[:-4] + "bn"].cpu().numpy())))
-                    in_idx = np.squeeze(np.argwhere(np.asarray(maskbndict[former].cpu().numpy())))
+                    in_idx = np.squeeze(np.argwhere(np.asarray(maskbndict[former].cpu().numpy())))  # [1 2 3 6]
                     w = layer.weight.data[:, in_idx, :, :].clone()
                     w = w[out_idx, :, :, :].clone()
                     if len(w.shape) ==3:
@@ -132,35 +134,46 @@ def weights_inheritance(model, compact_model, from_to_map, maskbndict):
                     pruned_layer.weight.data = w
                 if isinstance(former, list):
                 # ['model.2.m.0.cv2.bn', 'model.2.cv2.bn']
-                    orignin = [modelstate[i+".weight"].shape[0] for i in former]
-                    formerin = []
-                    for it in range(len(former)):
-                        name = former[it]
-                        tmp = [i for i in range(maskbndict[name].shape[0]) if maskbndict[name][i] == 1]
-                        if it > 0:
-                            tmp = [k + sum(orignin[:it]) for k in tmp]
-                        formerin.extend(tmp)
                     out_idx = np.squeeze(np.argwhere(np.asarray(maskbndict[layername[:-4] + "bn"].cpu().numpy())))
-                    w = layer.weight.data[out_idx, :, :, :].clone()
-                    pruned_layer.weight.data = w[:,formerin, :, :]
+
+                    former_kernel_num = [modelstate[former_item + ".weight"].shape[0] for former_item in former] # Compute former_kernel_num for accumlate index
+                    in_idx = []
+                    for i in range(len(former)):
+                        former_item = former[i]
+                        in_idx_each = np.squeeze(np.argwhere(np.asarray(maskbndict[former_item].cpu().numpy())))
+
+                        if i > 0:
+                            in_idx_each = [k + sum(former_kernel_num[:i]) for k in in_idx_each]
+                        in_idx.extend(in_idx_each)
+   
+                    w = layer.weight.data[:, in_idx, :, :].clone()
+                    w = w[out_idx, :, :, :].clone()
+                    if len(w.shape) ==3:
+                        w = w.unsqueeze(0)
+                    pruned_layer.weight.data = w
+
+            # Clone out_idx changed layer
             else:
                 out_idx = np.squeeze(np.argwhere(np.asarray(maskbndict[layername[:-4] + "bn"].cpu().numpy())))
                 w = layer.weight.data[out_idx, :, :, :].clone()
-                assert len(w.shape) == 4
+                if len(w.shape) == 3:
+                    w = w.unsqueeze(0)
                 pruned_layer.weight.data = w
 
-        if isinstance(layer,nn.BatchNorm2d):
-            out_idx = np.squeeze(np.argwhere(np.asarray(maskbndict[layername].cpu().numpy())))
-            pruned_layer.weight.data = layer.weight.data[out_idx].clone()
-            pruned_layer.bias.data = layer.bias.data[out_idx].clone()
-            pruned_layer.running_mean = layer.running_mean[out_idx].clone()
-            pruned_layer.running_var = layer.running_var[out_idx].clone()
-
+        # Clone in_idx changed layer
         if isinstance(layer, nn.Conv2d) and layername.startswith(f"model.{last_idx}"):  # --------------------------------
             former = from_to_map[layername]
             in_idx = np.squeeze(np.argwhere(np.asarray(maskbndict[former].cpu().numpy())))
             pruned_layer.weight.data = layer.weight.data[:, in_idx, :, :].clone()
             pruned_layer.bias.data = layer.bias.data.clone()
+
+        # Clone BatchNorm2d Layer
+        if isinstance(layer, nn.BatchNorm2d):
+            out_idx = np.squeeze(np.argwhere(np.asarray(maskbndict[layername].cpu().numpy())))
+            pruned_layer.weight.data = layer.weight.data[out_idx].clone()
+            pruned_layer.bias.data = layer.bias.data[out_idx].clone()
+            pruned_layer.running_mean = layer.running_mean[out_idx].clone()
+            pruned_layer.running_var = layer.running_var[out_idx].clone()
 
     m = model.module.model[-1] if hasattr(model, 'module') else model.model[-1]
     cm = compact_model.module.model[-1] if hasattr(compact_model, 'module') else compact_model.model[-1]

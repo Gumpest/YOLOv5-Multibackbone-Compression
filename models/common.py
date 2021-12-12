@@ -23,6 +23,8 @@ from utils.general import colorstr, increment_path, make_divisible, non_max_supp
 from utils.plots import Annotator, colors
 from utils.torch_utils import time_sync
 
+from models.SwinTransformer import SwinTransformerLayer
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -365,16 +367,30 @@ class TransformerLayer(nn.Module):
     # Transformer layer https://arxiv.org/abs/2010.11929 (LayerNorm layers removed for better performance)
     def __init__(self, c, num_heads):
         super().__init__()
+
+        self.layernorm1 = nn.LayerNorm(c)
         self.q = nn.Linear(c, c, bias=False)
         self.k = nn.Linear(c, c, bias=False)
         self.v = nn.Linear(c, c, bias=False)
         self.ma = nn.MultiheadAttention(embed_dim=c, num_heads=num_heads)
-        self.fc1 = nn.Linear(c, c, bias=False)
-        self.fc2 = nn.Linear(c, c, bias=False)
+        
+        self.layernorm2 = nn.LayerNorm(c)
+        self.fc1 = nn.Linear(c, 4*c, bias=False)
+        self.fc2 = nn.Linear(4*c, c, bias=False)
+
+        self.dropout = nn.Dropout(0.1)
+        self.act = nn.ReLU(True)
 
     def forward(self, x):
-        x = self.ma(self.q(x), self.k(x), self.v(x))[0] + x
-        x = self.fc2(self.fc1(x)) + x
+        x1 = x
+        x = self.layernorm1(x)
+        x = self.ma(self.q(x), self.k(x), self.v(x))[0] + x1
+
+        x2 = x
+        x = self.layernorm2(x)
+        x = self.dropout(self.act(self.fc1(x)))
+        x = self.dropout(self.fc2(x)) + x2
+
         return x
 
 
@@ -395,6 +411,25 @@ class TransformerBlock(nn.Module):
         b, _, w, h = x.shape
         p = x.flatten(2).unsqueeze(0).transpose(0, 3).squeeze(3)
         return self.tr(p + self.linear(p)).unsqueeze(3).transpose(0, 3).reshape(b, self.c2, w, h)
+
+
+class SwinTransformerBlock(nn.Module):
+    def __init__(self, c1, c2, num_heads, num_layers, window_size=8):
+        super().__init__()
+        self.conv = None
+        if c1 != c2:
+            self.conv = Conv(c1, c2)
+
+        # remove input_resolution
+        self.blocks = nn.Sequential(*[SwinTransformerLayer(dim=c2, num_heads=num_heads, window_size=window_size,
+                                 shift_size=0 if (i % 2 == 0) else window_size // 2) for i in range(num_layers)])
+
+    def forward(self, x):
+        if self.conv is not None:
+            x = self.conv(x)
+        x = self.blocks(x)
+        return x
+
 
 class Bottleneck(nn.Module):
     # Standard bottleneck
@@ -456,6 +491,16 @@ class C3TR(C3):
         c_ = int(c2 * e)
         self.m = TransformerBlock(c_, c_, 4, n)
 
+# -------------------------------------------------------------------------
+# C3STR
+# num_heads=[3, 6, 12, 24] --> c_ // 32
+class C3STR(C3):
+    # C3 module with SwinTransformerBlock()
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):
+        super().__init__(c1, c2, c2, n, shortcut, g, e)
+        c_ = int(c2 * e)
+        num_heads = c_ // 32
+        self.m = SwinTransformerBlock(c_, c_, num_heads, n)
 
 class C3SPP(C3):
     # C3 module with SPP()
