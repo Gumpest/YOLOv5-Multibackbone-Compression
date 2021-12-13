@@ -84,6 +84,7 @@ class WindowAttention(nn.Module):
 
         attn = self.attn_drop(attn)
 
+        # print(attn.dtype, v.dtype)
         x = (attn @ v).transpose(1, 2).reshape(B_, N, C)
         x = self.proj(x)
         x = self.proj_drop(x)
@@ -207,10 +208,11 @@ class SwinTransformerLayer(nn.Module):
     def forward(self, x):
         # reshape x[b c h w] to x[b l c]
         _, _, H_, W_ = x.shape
-        # print('1', x.shape)
 
+        Padding = False
         if min(H_, W_) < self.window_size or H_ % self.window_size!=0:
-            print(f'img_size {min(H_, W_)} is less than (or not divided by) window_size {self.window_size}, Padding.')
+            Padding = True
+            # print(f'img_size {min(H_, W_)} is less than (or not divided by) window_size {self.window_size}, Padding.')
             pad_r = (self.window_size - W_ % self.window_size) % self.window_size
             pad_b = (self.window_size - H_ % self.window_size) % self.window_size
             x = F.pad(x, (0, pad_r, 0, pad_b))
@@ -259,5 +261,8 @@ class SwinTransformerLayer(nn.Module):
         x = x + self.drop_path(self.mlp(self.norm2(x)))
 
         x = x.permute(0, 2, 1).contiguous().view(-1, C, H, W)  # b c h w
+
+        if Padding:
+            x = x[:, :, :H_, :W_]  # reverse padding
 
         return x

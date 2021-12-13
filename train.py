@@ -391,7 +391,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                            save_dir=save_dir,
                                            plots=False,
                                            callbacks=callbacks,
-                                           compute_loss=compute_loss)
+                                           compute_loss=compute_loss,
+                                           half=not opt.nohalf)
 
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
@@ -497,7 +498,10 @@ def parse_opt(known=False):
     parser.add_argument('--freeze', type=int, default=0, help='Number of layers to freeze. backbone=10, all=24')
     parser.add_argument('--save-period', type=int, default=-1, help='Save checkpoint every x epochs (disabled if < 1)')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
+    # Half
+    parser.add_argument('--nohalf', action='store_true', help='not use half to train')
 
+    # Quantize
     parser.add_argument('--quantize', action='store_true', help='run QAT with yolo')
     parser.add_argument('--BackendType', type=str, default='Tensorrt', help='backend for QAT deployment')
     

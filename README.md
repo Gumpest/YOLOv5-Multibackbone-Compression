@@ -89,13 +89,21 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 
 #### SwinTrans-YOLOv5![](https://img.shields.io/badge/Model-Microsoft-yellow.svg?style=plastic)
 
-（1）Window size替换成检测size的公约数8
+```shell
+pip install timm
+```
 
-（2）create_mask封装为函数，由init函数变为forward函数执行
+（1）Window size由***7***替换为检测任务常用分辨率的公约数***8***
 
-（3）当img_size小于window_size或不是其公倍数时，进行Padding
+（2）create_mask封装为函数，由在init函数执行变为在forward函数执行
+
+（3）若分辨率小于window size或不是其公倍数时，在其右侧和底部Padding
+
+<u>debug：在计算完之后需要反padding回去，否则与cv2支路的img_size无法对齐</u>
 
 （4）forward函数前后对输入输出reshape
+
+（5）验证C3STR时，需要手动关闭默认模型在half精度下验证（*--nohalf*）
 
 
 
