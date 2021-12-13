@@ -258,7 +258,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
     # DDP mode
     if cuda and RANK != -1:
-        model = DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK)
+        model = DDP(model, device_ids=[LOCAL_RANK], output_device=LOCAL_RANK, \
+        find_unused_parameters=any(isinstance(layer, nn.MultiheadAttention) for layer in model.modules())) # <--- due to multihead attn
 
     # Model parameters
     hyp['box'] *= 3. / nl  # scale to layers

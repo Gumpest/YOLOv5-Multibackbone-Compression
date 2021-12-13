@@ -384,7 +384,7 @@ class TransformerLayer(nn.Module):
     def forward(self, x):
         x1 = x
         x = self.layernorm1(x)
-        x = self.ma(self.q(x), self.k(x), self.v(x))[0] + x1
+        x = self.ma(self.q(x), self.k(x), self.v(x))[0] + x1   # <--- return two outputs, which is not kind to DDP
 
         x2 = x
         x = self.layernorm2(x)
