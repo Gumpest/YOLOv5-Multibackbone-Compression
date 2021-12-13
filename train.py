@@ -49,6 +49,9 @@ from utils.metrics import fitness
 from utils.loggers import Loggers
 from utils.callbacks import Callbacks
 
+# BatchNorm train sparsity
+from utils.prune_utils import parse_module_defs, gather_bn_weights, BatchNormSparser
+
 LOGGER = logging.getLogger(__name__)
 LOCAL_RANK = int(os.getenv('LOCAL_RANK', -1))  # https://pytorch.org/docs/stable/elastic/run.html
 RANK = int(os.getenv('RANK', -1))
@@ -205,6 +208,12 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     nl = model.model[-1].nl  # number of detection layers (used for scaling hyp['obj'])
     imgsz = check_img_size(opt.imgsz, gs, floor=gs * 2)  # verify imgsz is gs-multiple
 
+    # Batchnorm Layer sparse
+    if opt.sparse:
+        _, ignore_idx, _ = parse_module_defs(model.yaml)
+        # ['model.2.cv1.bn', 'model.2.m.0.cv2.bn',]
+        print('Batchnorm Layer sparse training ... ')
+
     # DP mode
     if cuda and RANK == -1 and torch.cuda.device_count() > 1:
         logging.warning('DP not recommended, instead use torch.distributed.run for best DDP Multi-GPU results.\n'
@@ -354,6 +363,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             # Backward
             scaler.scale(loss).backward()
 
+            BatchNormSparser.updateBN(opt.sparse, model, opt.sparse_rate, ignore_idx)
+
             # Optimize
             if ni - last_opt_step >= accumulate:
                 scaler.step(optimizer)  # optimizer.step
@@ -455,7 +466,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                             verbose=True,
                                             plots=True,
                                             callbacks=callbacks,
-                                            compute_loss=compute_loss)  # val best model with plots
+                                            compute_loss=compute_loss,
+                                            half=not opt.nohalf)  # val best model with plots
 
         callbacks.run('on_train_end', last, best, plots, epoch)
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}")
@@ -510,6 +522,10 @@ def parse_opt(known=False):
     parser.add_argument('--upload_dataset', action='store_true', help='W&B: Upload dataset as artifact table')
     parser.add_argument('--bbox_interval', type=int, default=-1, help='W&B: Set bounding-box image logging interval')
     parser.add_argument('--artifact_alias', type=str, default='latest', help='W&B: Version of dataset artifact to use')
+
+    # Slimming
+    parser.add_argument('--sparse', action='store_true', help='train with channel sparsity regularization')
+    parser.add_argument('--sparse-rate', type=float, default=0.001, help='scale sparse rate')
 
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt

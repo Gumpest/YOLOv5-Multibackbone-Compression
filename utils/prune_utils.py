@@ -251,3 +251,27 @@ def update_yaml(pruned_yaml, model, ignore_conv_idx, maskdict, opt):
                 update_yaml_loop(pruned_yaml,name,maskdict)
     
     return pruned_yaml
+
+class BatchNormSparser():
+
+    @staticmethod
+    def updateBN(sparse, model, sparse_rate, ignore_idx):
+        if sparse:
+            for name, module in model.named_modules():
+                if isinstance(module, nn.BatchNorm2d) and name not in ignore_idx:
+                    module.weight.grad.data.add_(sparse_rate * torch.sign(module.weight.data))  # L1
+                    # print('done')
+        else:
+            pass
+
+def gather_bn_weights(module_list, prune_idx):
+
+    size_list = [module_list[idx][1].weight.data.shape[0] if type(module_list[idx][1]).__name__ == 'BatchNorm2d' else module_list[idx][0].weight.data.shape[0] for idx in prune_idx]
+
+    bn_weights = torch.zeros(sum(size_list))
+    index = 0
+    for idx, size in zip(prune_idx, size_list):
+        bn_weights[index:(index + size)] = module_list[idx][1].weight.data.abs().clone() if type(module_list[idx][1]).__name__ == 'BatchNorm2d' else module_list[idx][0].weight.data.abs().clone()
+        index += size
+
+    return bn_weights 
