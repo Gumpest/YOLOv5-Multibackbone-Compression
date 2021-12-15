@@ -93,13 +93,19 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 pip install timm
 ```
 
+Usage：
+
+```shell
+python train.py --data VisDrone.yaml --weights yolov5x.pt --cfg models/accModels/yolov5xP2CBAM-Swin-BiFPN-SPP.yaml --hyp data/hyps/hyp.visdrone.yaml --epochs 60 --batch-size 4 --img 1536 --nohalf
+```
+
 （1）Window size由***7***替换为检测任务常用分辨率的公约数***8***
 
 （2）create_mask封装为函数，由在init函数执行变为在forward函数执行
 
 （3）若分辨率小于window size或不是其公倍数时，在其右侧和底部Padding
 
-<u>debug：在计算完之后需要反padding回去，否则与cv2支路的img_size无法对齐</u>
+*debug：在计算完之后需要反padding回去，否则与cv2支路的img_size无法对齐*
 
 （4）forward函数前后对输入输出reshape
 
@@ -112,7 +118,7 @@ pip install timm
 
 | Model                     | mAP       | mAP@50 | Parameters(M) | GFLOPs   | FPS@CPU | TrainCost(h) | Memory Cost(G) |
 | ------------------------- | --------- | ------ | ------------- | -------- | ------- | ------------ | -------------- |
-| YOLOv5s                   | 18.4      | 34     | 7.05          | 15.9     |         | 17.38        | 1.46           |
+| YOLOv5l                   | 23.2      | 39.7   | 46.19         | 108.1    |         |              |                |
 | YOLOv5l-Ghostnet          | 18.4      | 33.8   | 24.27         | 42.4     |         | 27.44        | 4.97           |
 | YOLOv5l-ShufflenetV2      | 16.48     | 31.1   | 21.27         | 40.5     |         | 10.98        | 2.41           |
 | YOLOv5l-Mobilenetv3Small  | 16.55     | 31.2   | **20.38**     | **38.4** |         | **10.19**    | 5.30           |
@@ -129,7 +135,9 @@ pip install timm
 
 （3）中间通道人为设定（expand）
 
-#### ShuffleNet-YOLOv5 ![](https://img.shields.io/badge/Model-Megvii-orange.svg?style=plastic)
+[Trained Pt PKUdisk](https://disk.pku.edu.cn:443/link/35BD905E65DE091E2A58316B20BBE775)
+
+#### ShuffleNetV2-YOLOv5 ![](https://img.shields.io/badge/Model-Megvii-orange.svg?style=plastic)
 
 <img src="https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/img/Shffulenet.png" alt="Shffulenet" width="400px" />
 
@@ -139,7 +147,7 @@ pip install timm
 
 （3）中间通道不变
 
-[PreTrained Pt File](https://disk.pku.edu.cn:443/link/A5ED89B7B190FCF1C8187A0A8AF20C4F)
+[Trained Pt PKUdisk](https://disk.pku.edu.cn:443/link/A5ED89B7B190FCF1C8187A0A8AF20C4F)
 
 #### MobileNetv3Small-YOLOv5 ![](https://img.shields.io/badge/Model-Google-orange.svg?style=plastic)
 
@@ -151,6 +159,8 @@ pip install timm
 （2）Neck与head部分嫁接YOLOv5l原结构
 
 （3）中间通道人为设定（expand）
+
+[Trained Pt PKUdisk](https://disk.pku.edu.cn:443/link/EE375ED30AAD3F2B3FA5055DD6F4964C)
 
 #### EfficientNetLite0-YOLOv5 ![](https://img.shields.io/badge/Model-Google-orange.svg?style=plastic)
 
@@ -244,7 +254,7 @@ python train.py --data data/VisDrone.yaml --imgsz 640 --weights path_to_pruned_y
 - [x] Multibackbone: TPH-YOLOv5
 - [x] Module: SwinTrans（C3STR）
 - [ ] Module: Deformable Convolution
-- [ ] Pruner: Network slimming
+- [ ] Pruner: Network Slimming
 - [x] Pruner: EagleEye
 - [ ] Pruner: OneShot (L1, L2, FPGM), ADMM, NetAdapt, Gradual, End2End
 - [x] Quantization: MQBench

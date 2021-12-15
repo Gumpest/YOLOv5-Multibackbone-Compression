@@ -41,7 +41,8 @@ def rand_prune_and_eval(model, ignore_idx, opt):
 
     while True:
         pruned_yaml = deepcopy(oriyaml)
-        
+
+        # obtain mask
         for name, module in model.named_modules():
             if isinstance(module, nn.Conv2d):
                 if name in ignore_conv_idx:
@@ -81,7 +82,7 @@ def rand_prune_and_eval(model, ignore_idx, opt):
                     'updates': None,
                     'optimizer': None,
                     'wandb_id': None}
-            torch.save(ckpt, opt.weights[:-3]+'-pruned.pt')
+            torch.save(ckpt, opt.weights[:-3]+'-EagleEyepruned.pt')
 
         candidates = candidates + 1
         del compact_model

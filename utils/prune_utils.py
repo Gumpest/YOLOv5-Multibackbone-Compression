@@ -11,7 +11,7 @@ from utils.general import make_divisible
 
 
 def parse_module_defs(d):
-    CBL_idx = []
+    CBL_idx = []  # Conv + BN + LeakyReLU
     ignore_idx  =[]
 
     anchors, nc, gd, gw = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple']
@@ -95,12 +95,24 @@ def obtain_filtermask_l1(conv_module, rand_remain_ratio):
     w_copy = conv_module.weight.data.abs().clone()
     w_copy = torch.sum(w_copy, dim=(1,2,3))  # each kernel owns one
     length = w_copy.size()[0]
-    num_retain = int(length*rand_remain_ratio)
-    if num_retain<2:
-        num_retain=2
+    # num_retain = int(length*rand_remain_ratio)
+    num_retain = max(make_divisible(int(length*rand_remain_ratio), 8), 8)
     _, indice = torch.topk(w_copy, num_retain)  # tensor([6, 1, 3, 2], device='cuda:0')
     mask = torch.zeros(length)
     mask[indice.cpu()] = 1
+
+    return mask
+
+def obtain_filtermask_bn(bn_module, thresh):
+    w_copy = bn_module.weight.data.abs().clone()
+
+    num_retain_init = int(sum(w_copy.gt(thresh).float()))
+
+    length = w_copy.shape[0]
+    num_retain = max(make_divisible(num_retain_init, 8), 8)
+    _, index = torch.topk(w_copy, num_retain)
+    mask = torch.zeros(length)
+    mask[index.cpu()] = 1
 
     return mask
 
@@ -264,14 +276,24 @@ class BatchNormSparser():
         else:
             pass
 
-def gather_bn_weights(module_list, prune_idx):
+# gather all the bn weights and put them into a line
+def gather_bn_weights(model, ignore_idx):
 
-    size_list = [module_list[idx][1].weight.data.shape[0] if type(module_list[idx][1]).__name__ == 'BatchNorm2d' else module_list[idx][0].weight.data.shape[0] for idx in prune_idx]
+    bn_size_list = []
+    bn_module_list = []
+    for name, module in model.named_modules():
+        if isinstance(module, nn.BatchNorm2d) and name not in ignore_idx:
+            bn_size_list.append(module.weight.data.shape[0])  # torch.Size([128]) --> 128
+            bn_module_list.append(module)
 
-    bn_weights = torch.zeros(sum(size_list))
+    # print(bn_size_list)
+    bn_weights = torch.zeros(sum(bn_size_list))
+    
     index = 0
-    for idx, size in zip(prune_idx, size_list):
-        bn_weights[index:(index + size)] = module_list[idx][1].weight.data.abs().clone() if type(module_list[idx][1]).__name__ == 'BatchNorm2d' else module_list[idx][0].weight.data.abs().clone()
-        index += size
+    for module, size in zip(bn_module_list, bn_size_list):
+
+        # print(module.weight.data.abs().clone().shape[0], size)
+        bn_weights[index:(index + size)] = module.weight.data.abs().clone()
+        index = index + size
 
     return bn_weights 

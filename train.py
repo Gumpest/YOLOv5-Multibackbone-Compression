@@ -211,6 +211,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     # Batchnorm Layer sparse
     if opt.sparse:
         _, ignore_idx, _ = parse_module_defs(model.yaml)
+        gather_bn_weights(model, ignore_idx)
         # ['model.2.cv1.bn', 'model.2.m.0.cv2.bn',]
         print('Batchnorm Layer sparse training ... ')
 
@@ -364,7 +365,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             # Backward
             scaler.scale(loss).backward()
 
-            BatchNormSparser.updateBN(opt.sparse, model, opt.sparse_rate, ignore_idx)
+            if opt.sparse:
+                BatchNormSparser.updateBN(opt.sparse, model, opt.sparse_rate, ignore_idx)
 
             # Optimize
             if ni - last_opt_step >= accumulate:
