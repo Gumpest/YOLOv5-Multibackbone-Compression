@@ -366,7 +366,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             scaler.scale(loss).backward()
 
             if opt.sparse:
-                BatchNormSparser.updateBN(opt.sparse, model, opt.sparse_rate, ignore_idx)
+                BatchNormSparser.updateBN(model, opt.sparse_rate, ignore_idx)
 
             # Optimize
             if ni - last_opt_step >= accumulate:

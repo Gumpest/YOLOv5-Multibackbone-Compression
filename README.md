@@ -20,6 +20,8 @@
 
 2021.12.12 完成SwinTrans-YOLOv5（C3STR）
 
+2021.12.15 完成Slimming对YOLOv5系列剪枝支持
+
 ## Requirements
 
 环境安装
@@ -31,7 +33,7 @@ pip install -r requirements.txt
 
 ## Evaluation metric
 
-Visdrone DataSet (1-5 size is 608，6-8 size is 640)
+Visdrone DataSet (1-5 size is 608，6-7 size is 640，8 size is 1536)
 
 | Model          | mAP   | mAP@50 | Parameters(M) | GFLOPs |
 | -------------- | ----- | ------ | ------------- | ------ |
@@ -42,7 +44,7 @@ Visdrone DataSet (1-5 size is 608，6-8 size is 640)
 | YOLOv5x        | 24.3  | 40.8   | 86.28         | 204.4  |
 | YOLOv5xP2      | 30.00 | 49.29  | 90.96         | 314.2  |
 | YOLOv5xP2 CBAM | 30.13 | 49.40  | 91.31         | 315.1  |
-| YOLOv5x-TPH    | 30.26 | 49.39  | 86.08         | 238.9  |
+| YOLOv5x-TPH    | 41.2  | 63.4   | 112.97        | 270.8  |
 
 训练脚本实例：
 
@@ -63,7 +65,7 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 | YOLOv5xP2(640)        | 30.1  | 49.3   | 90.96         | 314.2  |
 | YOLOv5xP2 CBAM(640)   | 30.13 | 49.40  | 91.31         | 315.1  |
 | **YOLOv5x-TPH**(640)  | 30.26 | 49.39  | 96.76         | 345.0  |
-| **YOLOv5x-TPH(1536)** | 38.00 | 60.56  | 94.34         | 268.1  |
+| **YOLOv5x-TPH(1536)** | 41.2  | 63.4   | 112.97        | 270.8  |
 
 组件：P2 Head、CBAM、TPH、BiFPN、SPP
 
@@ -212,17 +214,29 @@ python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yolov5n.y
 | YOLOv5n              | 13   | 26.2   | 1.78          | 4.2    |         |
 | YOLOv5s-EagleEye@0.6 | 14.3 | 27.9   | 4.59          | 9.6    |         |
 
-基于YOLOv5的块状结构设计，该仓库采用基于搜索的通道剪枝方法[EagleEye: Fast Sub-net Evaluation for Efficient Neural Network Pruning](https://arxiv.org/abs/2007.02491)。核心思想是随机搜索到大量符合目标约束的子网，然后快速更新校准BN层的均值与方差参数，并在验证集上测试校准后全部子网的精度。精度最高的子网拥有最好的架构，经微调恢复后能达到较高的精度。
+### 1、Prune Strategy
 
-![eagleeye](https://github.com/Cydia2018/YOLOv5-Multibackbone-Compression/blob/main/img/eagleeye.png)
-
-这里为Conv、C3、SPP和SPPF模块设计了通道缩放比例用于搜索。具体来说有以下缩放系数：
+（1）基于YOLOv5块状结构设计，对Conv、C3、SPP(F)模块进行剪枝，具体来说有以下：
 
 - Conv模块的输出通道数
 - C3模块中cv2块和cv3块的输出通道数
 - C3模块中若干个bottleneck中的cv1块的输出通道数
 
-### Usage
+（2）八倍通道剪枝（outchannel = 8*n）
+
+（3）ShortCut、concat皆合并剪枝
+
+### 2、Prune Tools
+
+#### （1）EagleEye
+
+基于搜索的通道剪枝方法，核心思想是随机搜索到大量符合目标约束的子网，然后快速更新校准BN层的均值与方差参数，并在验证集上测试校准后全部子网的精度。精度最高的子网拥有最好的架构，经微调恢复后能达到较高的精度。
+
+![eagleeye](https://github.com/Cydia2018/YOLOv5-Multibackbone-Compression/blob/main/img/eagleeye.png)
+
+[EagleEye: Fast Sub-net Evaluation for Efficient Neural Network Pruning](https://arxiv.org/abs/2007.02491)
+
+##### Usage
 
 1. 正常训练模型
 
@@ -230,7 +244,7 @@ python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yolov5n.y
 python train.py --data data/VisDrone.yaml --imgsz 640 --weights yolov5s.pt --cfg models/prunModels/yolov5s-pruning.yaml --device 0
 ```
 
-（注意训练其他模型，参考/prunModels/yolov5s-pruning.yaml进行修改。目前已支持v6架构）
+（注意训练其他模型，参考/prunModels/yolov5s-pruning.yaml进行修改，目前已支持v6架构）
 
 2. 搜索最优子网
 
@@ -241,7 +255,33 @@ python pruneEagleEye.py --weights path_to_trained_yolov5_model --cfg models/prun
 3. 微调恢复精度
 
 ```shell
-python train.py --data data/VisDrone.yaml --imgsz 640 --weights path_to_pruned_yolov5_model --cfg path_to_pruned_yolov5_yaml --device 0
+python train.py --data data/VisDrone.yaml --imgsz 640 --weights path_to_Eaglepruned_yolov5_model --cfg path_to_pruned_yolov5_yaml --device 0
+```
+
+#### （2）Network Slimming
+
+[Learning Efficient Convolutional Networks through Network Slimming]([Learning Efficient Convolutional Networks Through Network Slimming (thecvf.com)](https://openaccess.thecvf.com/content_ICCV_2017/papers/Liu_Learning_Efficient_Convolutional_ICCV_2017_paper.pdf))
+
+##### Usage
+
+1. 模型BatchNorm Layer \gamma 稀疏化训练
+
+```shell
+python train.py --data data/VisDrone.yaml --imgsz 640 --weights yolov5s.pt --cfg models/prunModels/yolov5s-pruning.yaml --device 0 --sparse
+```
+
+（注意训练其他模型，参考/prunModels/yolov5s-pruning.yaml进行修改，目前已支持v6架构）
+
+2. BatchNorm Layer剪枝
+
+```shell
+python pruneSlim.py --weights path_to_sparsed_yolov5_model --cfg models/prunModels/yolov5s-pruning.yaml --data data/VisDrone.yaml --path path_to_pruned_yolov5_yaml --global_percent 0.6 --device 3
+```
+
+3. 微调恢复精度
+
+```shell
+python train.py --data data/VisDrone.yaml --imgsz 640 --weights path_to_Slimpruned_yolov5_model --cfg path_to_pruned_yolov5_yaml --device 0
 ```
 
 ## To do
@@ -254,7 +294,7 @@ python train.py --data data/VisDrone.yaml --imgsz 640 --weights path_to_pruned_y
 - [x] Multibackbone: TPH-YOLOv5
 - [x] Module: SwinTrans（C3STR）
 - [ ] Module: Deformable Convolution
-- [ ] Pruner: Network Slimming
+- [x] Pruner: Network Slimming
 - [x] Pruner: EagleEye
 - [ ] Pruner: OneShot (L1, L2, FPGM), ADMM, NetAdapt, Gradual, End2End
 - [x] Quantization: MQBench
@@ -262,6 +302,8 @@ python train.py --data data/VisDrone.yaml --imgsz 640 --weights path_to_pruned_y
 
 ## Acknowledge
 
-感谢TPH-YOLOv5作者Xingkui Zhu
+感谢TPH-YOLOv5作者Xingkui Zhu 
 
 官方实现[cv516Buaa/tph-yolov5 (github.com)](https://github.com/cv516Buaa/tph-yolov5)
+
+感谢[ZJU-lishuang/yolov5_prune: yolov5剪枝，支持v2,v3,v4,v6版本的yolov5 (github.com)](https://github.com/ZJU-lishuang/yolov5_prune)

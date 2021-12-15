@@ -267,14 +267,10 @@ def update_yaml(pruned_yaml, model, ignore_conv_idx, maskdict, opt):
 class BatchNormSparser():
 
     @staticmethod
-    def updateBN(sparse, model, sparse_rate, ignore_idx):
-        if sparse:
+    def updateBN(model, sparse_rate, ignore_idx):
             for name, module in model.named_modules():
                 if isinstance(module, nn.BatchNorm2d) and name not in ignore_idx:
                     module.weight.grad.data.add_(sparse_rate * torch.sign(module.weight.data))  # L1
-                    # print('done')
-        else:
-            pass
 
 # gather all the bn weights and put them into a line
 def gather_bn_weights(model, ignore_idx):
