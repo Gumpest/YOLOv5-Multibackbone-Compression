@@ -24,52 +24,45 @@
 
 ## Requirements
 
-环境安装
-
 ```shell
 pip install -r requirements.txt
 ```
 
+## Multi-Backbone Substitution for YOLOs
 
-## Evaluation metric
+### 1、Base Model
 
-Visdrone DataSet (1-5 size is 608，6-7 size is 640，8 size is 1536)
+Train on Visdrone DataSet (*Input size is 608*)
 
-| Model          | mAP   | mAP@50 | Parameters(M) | GFLOPs |
-| -------------- | ----- | ------ | ------------- | ------ |
-| YOLOv5n        | 13    | 26.2   | 1.78          | 4.2    |
-| YOLOv5s        | 18.4  | 34     | 7.05          | 15.9   |
-| YOLOv5m        | 21.6  | 37.8   | 20.91         | 48.2   |
-| YOLOv5l        | 23.2  | 39.7   | 46.19         | 108.1  |
-| YOLOv5x        | 24.3  | 40.8   | 86.28         | 204.4  |
-| YOLOv5xP2      | 30.00 | 49.29  | 90.96         | 314.2  |
-| YOLOv5xP2 CBAM | 30.13 | 49.40  | 91.31         | 315.1  |
-| YOLOv5x-TPH    | 41.2  | 63.4   | 112.97        | 270.8  |
+| No.  | Model   | mAP  | mAP@50 | Parameters(M) | GFLOPs |
+| ---- | ------- | ---- | ------ | ------------- | ------ |
+| 1    | YOLOv5n | 13.0 | 26.20  | 1.78          | 4.2    |
+| 2    | YOLOv5s | 18.4 | 34.00  | 7.05          | 15.9   |
+| 3    | YOLOv5m | 21.6 | 37.80  | 20.91         | 48.2   |
+| 4    | YOLOv5l | 23.2 | 39.70  | 46.19         | 108.1  |
+| 5    | YOLOv5x | 24.3 | 40.80  | 86.28         | 204.4  |
 
-训练脚本实例：
+### 2、Higher Precision Model
+
+#### A、TPH-YOLOv5 ![](https://img.shields.io/badge/Model-BeiHangUni-yellowgreen.svg?style=plastic)
+
+Train on Visdrone DataSet (*6-7 size is 640，8 size is 1536*)
+
+| No.  | Model          | mAP  | mAP@50 | Parameters(M) | GFLOPs |
+| ---- | -------------- | ---- | ------ | ------------- | ------ |
+| 6    | YOLOv5xP2      | 30.0 | 49.29  | 90.96         | 314.2  |
+| 7    | YOLOv5xP2 CBAM | 30.1 | 49.40  | 91.31         | 315.1  |
+| 8    | YOLOv5x-TPH    | 40.7 | 63.00  | 112.97        | 270.8  |
+
+###### Usage：
 
 ```shell
-nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yolov5n.yaml --epochs 300 --batch-size 8 --img 608 --nosave --device 0,1 --sync-bn >> yolov5n.txt &
+nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yolov5n.yaml --epochs 300 --batch-size 8 --img 608 --device 0,1 --sync-bn >> yolov5n.txt &
 ```
-## Multi-Backbone
 
-### 精度区
+###### Composition：
 
-#### TPH-YOLOv5 ![](https://img.shields.io/badge/Model-BeiHangUni-yellowgreen.svg?style=plastic)
-
-消融实验如下：
-
-| Model                 | mAP   | mAP@50 | Parameters(M) | GFLOPs |
-| --------------------- | ----- | ------ | ------------- | ------ |
-| YOLOv5x(604)          | 24.3  | 40.8   | 86.28         | 204.4  |
-| YOLOv5xP2(640)        | 30.1  | 49.3   | 90.96         | 314.2  |
-| YOLOv5xP2 CBAM(640)   | 30.13 | 49.40  | 91.31         | 315.1  |
-| **YOLOv5x-TPH**(640)  | 30.26 | 49.39  | 96.76         | 345.0  |
-| **YOLOv5x-TPH(1536)** | 41.2  | 63.4   | 112.97        | 270.8  |
-
-组件：P2 Head、CBAM、TPH、BiFPN、SPP
-
-结构图如下：
+**P2 Head、CBAM、TPH、BiFPN、SPP**
 
 <img src="https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/img/TPH-YOLOv5.png" alt="TPH-YOLOv5" width="600px" height="300px" />
 
@@ -89,13 +82,13 @@ nohup python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yol
 
 <img src="https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/img/image-20211109150606998.png" alt="loss" width="600px" />
 
-#### SwinTrans-YOLOv5![](https://img.shields.io/badge/Model-Microsoft-yellow.svg?style=plastic)
+#### B、SwinTrans-YOLOv5![](https://img.shields.io/badge/Model-Microsoft-yellow.svg?style=plastic)
 
 ```shell
 pip install timm
 ```
 
-Usage：
+###### Usage：
 
 ```shell
 python train.py --data VisDrone.yaml --weights yolov5x.pt --cfg models/accModels/yolov5xP2CBAM-Swin-BiFPN-SPP.yaml --hyp data/hyps/hyp.visdrone.yaml --epochs 60 --batch-size 4 --img 1536 --nohalf
@@ -113,21 +106,20 @@ python train.py --data VisDrone.yaml --weights yolov5x.pt --cfg models/accModels
 
 （5）验证C3STR时，需要手动关闭默认模型在half精度下验证（*--nohalf*）
 
+### 3、Slighter Model
 
+Train on Visdrone DataSet (*1 size is 608，2-6 size is 640*)
 
+| No   | Model                     | mAP       | mAP@50 | Parameters(M) | GFLOPs   | FPS@CPU | TrainCost(h) | Memory Cost(G) | PT File                                                      |
+| ---- | ------------------------- | --------- | ------ | ------------- | -------- | ------- | ------------ | -------------- | ------------------------------------------------------------ |
+| 1    | YOLOv5l                   | 23.2      | 39.7   | 46.19         | 108.1    |         |              |                |                                                              |
+| 2    | YOLOv5l-GhostNet          | 18.4      | 33.8   | 24.27         | 42.4     |         | 27.44        | 4.97           | [PekingUni Cloud](https://disk.pku.edu.cn:443/link/35BD905E65DE091E2A58316B20BBE775) |
+| 3    | YOLOv5l-ShuffleNetV2      | 16.48     | 31.1   | 21.27         | 40.5     |         | 10.98        | 2.41           | [PekingUni Cloud](https://disk.pku.edu.cn:443/link/A5ED89B7B190FCF1C8187A0A8AF20C4F) |
+| 4    | YOLOv5l-MobileNetv3Small  | 16.55     | 31.2   | **20.38**     | **38.4** |         | **10.19**    | 5.30           | [PekingUni Cloud](https://disk.pku.edu.cn:443/link/EE375ED30AAD3F2B3FA5055DD6F4964C) |
+| 5    | YOLOv5l-EfficientNetLite0 | **19.12** | **35** | 23.01         | 43.9     |         | 13.94        | 2.04           |                                                              |
+| 6    | YOLOv5l-PP-LCNet          | 17.63     | 32.8   | 21.64         | 41.7     |         | 18.52        | **1.66**       |                                                              |
 
-### 轻量区
-
-| Model                     | mAP       | mAP@50 | Parameters(M) | GFLOPs   | FPS@CPU | TrainCost(h) | Memory Cost(G) |
-| ------------------------- | --------- | ------ | ------------- | -------- | ------- | ------------ | -------------- |
-| YOLOv5l                   | 23.2      | 39.7   | 46.19         | 108.1    |         |              |                |
-| YOLOv5l-Ghostnet          | 18.4      | 33.8   | 24.27         | 42.4     |         | 27.44        | 4.97           |
-| YOLOv5l-ShufflenetV2      | 16.48     | 31.1   | 21.27         | 40.5     |         | 10.98        | 2.41           |
-| YOLOv5l-Mobilenetv3Small  | 16.55     | 31.2   | **20.38**     | **38.4** |         | **10.19**    | 5.30           |
-| YOLOv5l-EfficientNetLite0 | **19.12** | **35** | 23.01         | 43.9     |         | 13.94        | 2.04           |
-| YOLOv5l-PP-LCNet          | 17.63     | 32.8   | 21.64         | 41.7     |         | 18.52        | **1.66**       |
-
-#### GhostNet-YOLOv5 ![](https://img.shields.io/badge/Model-HuaWei-orange.svg?style=plastic)
+#### A、GhostNet-YOLOv5 ![](https://img.shields.io/badge/Model-HuaWei-orange.svg?style=plastic)
 
 <img src="https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/img/GhostNet.jpg" alt="GhostNet" width="500px" height="250px" />
 
@@ -137,9 +129,7 @@ python train.py --data VisDrone.yaml --weights yolov5x.pt --cfg models/accModels
 
 （3）中间通道人为设定（expand）
 
-[Trained Pt PKUdisk](https://disk.pku.edu.cn:443/link/35BD905E65DE091E2A58316B20BBE775)
-
-#### ShuffleNetV2-YOLOv5 ![](https://img.shields.io/badge/Model-Megvii-orange.svg?style=plastic)
+#### B、ShuffleNetV2-YOLOv5 ![](https://img.shields.io/badge/Model-Megvii-orange.svg?style=plastic)
 
 <img src="https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/img/Shffulenet.png" alt="Shffulenet" width="400px" />
 
@@ -149,10 +139,7 @@ python train.py --data VisDrone.yaml --weights yolov5x.pt --cfg models/accModels
 
 （3）中间通道不变
 
-[Trained Pt PKUdisk](https://disk.pku.edu.cn:443/link/A5ED89B7B190FCF1C8187A0A8AF20C4F)
-
-#### MobileNetv3Small-YOLOv5 ![](https://img.shields.io/badge/Model-Google-orange.svg?style=plastic)
-
+#### C、MobileNetv3Small-YOLOv5 ![](https://img.shields.io/badge/Model-Google-orange.svg?style=plastic)
 
 <img src="https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/img/Mobilenetv3s.jpg" alt="Mobilenetv3s" width="500px" />
 
@@ -162,9 +149,7 @@ python train.py --data VisDrone.yaml --weights yolov5x.pt --cfg models/accModels
 
 （3）中间通道人为设定（expand）
 
-[Trained Pt PKUdisk](https://disk.pku.edu.cn:443/link/EE375ED30AAD3F2B3FA5055DD6F4964C)
-
-#### EfficientNetLite0-YOLOv5 ![](https://img.shields.io/badge/Model-Google-orange.svg?style=plastic)
+#### D、EfficientNetLite0-YOLOv5 ![](https://img.shields.io/badge/Model-Google-orange.svg?style=plastic)
 
 
 <img src="https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/img/efficientlite.jpg" alt="efficientlite" width="500px" />
@@ -175,7 +160,7 @@ python train.py --data VisDrone.yaml --weights yolov5x.pt --cfg models/accModels
 
 （3）中间通道一律*6（expand）
 
-#### PP-LCNet-YOLOv5  ![](https://img.shields.io/badge/Model-Baidu-orange.svg?style=plastic)
+#### E、PP-LCNet-YOLOv5  ![](https://img.shields.io/badge/Model-Baidu-orange.svg?style=plastic)
 
 
 <img src="https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/img/PP-LCNet.png" alt="PP-LCNet" width="500px" />
@@ -187,26 +172,7 @@ python train.py --data VisDrone.yaml --weights yolov5x.pt --cfg models/accModels
 
 （3）中间通道不变
 
-## MQBench Quantize Aware Training
-
- MQBench是实际硬件部署下评估量化算法的框架，进行各种适合于硬件部署的量化训练（QAT）
-### Requirements
-- PyTorch == 1.8.1
-### Install MQBench Lib ![](https://img.shields.io/badge/Tec-Sensetime-brightgreen.svg?style=plastic)
-由于MQBench目前还在不断更新，选择0.0.2稳定版本作为本仓库的量化库。
-```shell
-git clone https://github.com/ZLkanyo009/MQBench.git
-cd MQBench
-python setup.py build
-python setup.py install
-```
-### Usage
-训练脚本实例：
-
-```shell
-python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yolov5n.yaml --epochs 300 --batch-size 8 --img 608 --nosave --device 0,1 --sync-bn --quantize --BackendType NNIE
-```
-## Pruning
+## Pruning for YOLOs
 
 | Model                | mAP  | mAP@50 | Parameters(M) | GFLOPs | FPS@CPU |
 | -------------------- | ---- | ------ | ------------- | ------ | ------- |
@@ -230,11 +196,11 @@ python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yolov5n.y
 
 #### （1）EagleEye
 
+[EagleEye: Fast Sub-net Evaluation for Efficient Neural Network Pruning](https://arxiv.org/abs/2007.02491)
+
 基于搜索的通道剪枝方法，核心思想是随机搜索到大量符合目标约束的子网，然后快速更新校准BN层的均值与方差参数，并在验证集上测试校准后全部子网的精度。精度最高的子网拥有最好的架构，经微调恢复后能达到较高的精度。
 
 ![eagleeye](https://github.com/Cydia2018/YOLOv5-Multibackbone-Compression/blob/main/img/eagleeye.png)
-
-[EagleEye: Fast Sub-net Evaluation for Efficient Neural Network Pruning](https://arxiv.org/abs/2007.02491)
 
 ##### Usage
 
@@ -260,7 +226,7 @@ python train.py --data data/VisDrone.yaml --imgsz 640 --weights path_to_Eaglepru
 
 #### （2）Network Slimming
 
-[Learning Efficient Convolutional Networks through Network Slimming]([Learning Efficient Convolutional Networks Through Network Slimming (thecvf.com)](https://openaccess.thecvf.com/content_ICCV_2017/papers/Liu_Learning_Efficient_Convolutional_ICCV_2017_paper.pdf))
+[Learning Efficient Convolutional Networks through Network Slimming](https://openaccess.thecvf.com/content_ICCV_2017/papers/Liu_Learning_Efficient_Convolutional_ICCV_2017_paper.pdf)
 
 ##### Usage
 
@@ -282,6 +248,33 @@ python pruneSlim.py --weights path_to_sparsed_yolov5_model --cfg models/prunMode
 
 ```shell
 python train.py --data data/VisDrone.yaml --imgsz 640 --weights path_to_Slimpruned_yolov5_model --cfg path_to_pruned_yolov5_yaml --device 0
+```
+
+## Quantize Aware Training for YOLOs
+
+ MQBench是实际硬件部署下评估量化算法的框架，进行各种适合于硬件部署的量化训练（QAT）
+
+### Requirements
+
+- PyTorch == 1.8.1
+
+### Install MQBench Lib ![](https://img.shields.io/badge/Tec-Sensetime-brightgreen.svg?style=plastic)
+
+由于MQBench目前还在不断更新，选择0.0.2稳定版本作为本仓库的量化库。
+
+```shell
+git clone https://github.com/ZLkanyo009/MQBench.git
+cd MQBench
+python setup.py build
+python setup.py install
+```
+
+### Usage
+
+训练脚本实例：
+
+```shell
+python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yolov5n.yaml --epochs 300 --batch-size 8 --img 608 --nosave --device 0,1 --sync-bn --quantize --BackendType NNIE
 ```
 
 ## To do
