@@ -10,7 +10,7 @@
 # nohup python -m torch.distributed.launch --nproc_per_node 2 --master_port 2002 train.py --data VisDrone.yaml --weights yolov5l.pt --cfg models/lightModels/yolov5lEfficientLite.yaml --epochs 300 --batch-size 8 --img 640 --nosave --device 0,2 --sync-bn >> yolov5lEfficientLite.out &
 # nohup python -m torch.distributed.launch --nproc_per_node 2 --master_port 2000 train.py --data VisDrone.yaml --weights yolov5l.pt --cfg models/lightModels/yolov5lPP-LC.yaml --epochs 300 --batch-size 8 --img 640 --nosave --device 0,3 --sync-bn >> yolov5lPP-LC.out &
 # nohup python -m torch.distributed.launch --nproc_per_node 2 --master_port 2003 train.py --data VisDrone.yaml --weights runs/train/exp152/weights/last-pruned.pt --cfg models/prunModels/yolov5s-0.6-pruned.yaml --epochs 220 --batch-size 8 --img 608 --nosave --device 0,1 --sync-bn >> yolov5spruned.out &
-# nohup python -m torch.distributed.launch --nproc_per_node 2 --master_port 2004 train.py --data VisDrone.yaml --weights yolov5x.pt --cfg models/accModels/yolov5xP2CBAM-Swin-BiFPN-SPP.yaml --hyp data/hyps/hyp.visdrone.yaml --epochs 160 --batch-size 4 --img 1536 --nosave --device 0,1 --sync-bn --adam --name v5x-Swin-fix >> yolov5xSwin.out &
+nohup python -m torch.distributed.launch --nproc_per_node 2 --master_port 2004 train.py --data VisDrone.yaml --weights runs/train/v5x-TPH/weights/best.pt --cfg models/accModels/yolov5xP2CBAM-Swin-BiFPN-SPP.yaml --hyp data/hyps/hyp.visdrone.yaml --epochs 80 --batch-size 4 --img 1536 --device 0,1 --sync-bn --adam --nohalf --name v5x-Swin >> yolov5xSwin.out &
 
 # Prune Script
 # nohup python pruneEagleEye.py --weights /home/zy/DVSTrack/yolov5/weights/yolon608.pt --cfg models/prunModels/yolov5n-pruning.yaml --data data/DVSPerson.yaml --path yolov5n-DVSPerson-pruned.yaml --max_iter 1400 --remain_ratio 0.6 --delta 0.15 >> DVSsearch.out &
@@ -25,4 +25,4 @@
 # python pruneSlim.py --weights runs/train/sparseDVSTrack/weights/best.pt --cfg models/prunModels/yolov5n-pruning.yaml --data data/DVSPerson.yaml --path yolov5n-DVSPerson-pruned.yaml --global_percent 0.6 --device 3
 
 # Step3:
-python -m torch.distributed.launch --nproc_per_node 2 --master_port 2006 train.py --weights runs/train/sparseDVSTrack/weights/best-Slimpruned.pt --cfg models/prunModels/yolov5n-DVSPerson-prunedSlim.yaml --data data/DVSPerson.yaml --epochs 16 --batch-size 8 --img 608 --device 2,3 --sync-bn --name slimDVSTrack
+# python -m torch.distributed.launch --nproc_per_node 2 --master_port 2006 train.py --weights runs/train/sparseDVSTrack/weights/best-Slimpruned.pt --cfg models/prunModels/yolov5n-DVSPerson-prunedSlim.yaml --data data/DVSPerson.yaml --epochs 16 --batch-size 8 --img 608 --device 2,3 --sync-bn --name slimDVSTrack
