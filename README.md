@@ -277,6 +277,9 @@ python setup.py install
 python train.py --data VisDrone.yaml --weights yolov5n.pt --cfg models/yolov5n.yaml --epochs 300 --batch-size 8 --img 608 --nosave --device 0,1 --sync-bn --quantize --BackendType NNIE
 ```
 
+## Deploy
+目前已支持TensorRT及NCNN部署，详见[YOLOv5-Multibackbone-Compression/deploy](https://github.com/Gumpest/YOLOv5-Multibackbone-Compression/blob/main/deploy)
+
 ## To do
 
 - [x] Multibackbone: MobileNetV3-small
