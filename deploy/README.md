@@ -13,7 +13,7 @@ python export_onnx_trt.py --weights yolov5s.pt --device 0
 Now get **yolov5s.engine**.
 ### 3. Detect
 ```shell
-python export_onnx_trt.py --weights yolov5s.engine --device 0
+python  detect_trt.py --weights yolov5s.engine
 ```
 
 
